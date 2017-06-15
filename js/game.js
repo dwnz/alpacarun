@@ -1,24 +1,15 @@
-function AlapcaRun(canvas) {
+function AlpacaRun(canvas) {
     var t = this;
     t.isRunning = false;
     t.playSound = true;
 
     var ctx = canvas.getContext("2d");
 
-    // Setup core display
-    var canvasWidth = window.innerWidth;
-    var canvasHeight = window.innerHeight;
-
-    if (canvasWidth > 800) {
-        canvasWidth = 800;
-        canvasHeight = 600;
-    }
-
-    var scale = canvasWidth / 800;
-    var heightScale = canvasHeight / 600;
-
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    // Display variables
+    var canvasWidth;
+    var canvasHeight;
+    var scale;
+    var heightScale;
 
     // Setup task runner to build game UI
     var taskRunner = new TaskRunner();
@@ -30,6 +21,61 @@ function AlapcaRun(canvas) {
         taskRunner.run();
         addStarsTimeout = setTimeout(AddStarsIfNeeded, 1000);
     };
+
+    // Gross resize function... Need to refactor
+    t.resize = function () {
+        t.isRunning = false;
+        clearTimeout(addStarsTimeout);
+        taskRunner.stop();
+
+        canvasWidth = window.innerWidth;
+        canvasHeight = window.innerHeight;
+
+        if (canvasWidth > 800) {
+            canvasWidth = 800;
+            canvasHeight = 600;
+        }
+
+        scale = canvasWidth / 800;
+        heightScale = canvasHeight / 600;
+
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        if (t.menu) {
+            uiHelper = new UIHelper(canvas);
+            t.menu();
+
+            // Rebuild sizing across images
+            uiHelper.LoadAndSizeImage(img);
+            uiHelper.LoadAndSizeImage(trees);
+            uiHelper.LoadAndSizeImage(ground);
+            uiHelper.LoadAndSizeImage(clouds);
+            uiHelper.LoadAndSizeImage(clouds2);
+            uiHelper.LoadAndSizeImage(bushes);
+            uiHelper.LoadAndSizeImage(alpaca);
+            uiHelper.LoadAndSizeImage(star);
+
+            position = {
+                clouds1: 0,
+                clouds2: canvasWidth,
+                clouds3: 0,
+                clouds4: canvasWidth,
+
+                ground1: 0,
+                ground2: canvasWidth,
+
+                bushes1: 0,
+                bushes2: canvasWidth,
+
+                alpaca: 0,
+                alpacaDirection: 'up'
+            };
+        }
+    };
+
+    // Setup core display
+    t.resize();
 
     // Game properties
     var maxJumpHeight = 200 * scale;
@@ -143,6 +189,8 @@ function AlapcaRun(canvas) {
 
     // Menu "scene"
     t.menu = function () {
+        window.addEventListener('orientationchange', t.resize);
+
         var splash = new Image();
         splash.onload = function () {
             ctx.drawImage(splash, 0, 0, canvasWidth, canvasHeight);

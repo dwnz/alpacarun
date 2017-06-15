@@ -3,13 +3,25 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <title>Alpaca Jump</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
 </head>
 
-<body style="background: black;padding:0; margin: 0">
-<div style="text-align: center;">
+<body>
+<div class="gamebox">
     <canvas id="game"></canvas>
+    <p>
+        Built by <a href="https://twitter.com/dwnz">@dwnz</a>
+        |
+        <a href="https://github.com/dwnz/alpacarun">Github</a>
+    </p>
+</div>
+<div class="rotate">
+    <img src="/img/rotate.png">
 </div>
 
 <script src="/js/taskRunner.js"></script>
@@ -17,9 +29,7 @@
 <script src="/js/game.js"></script>
 
 <script>
-    var c = document.getElementById('game');
-
-    var game = new AlapcaRun(c);
+    var game = new AlpacaRun(document.getElementById('game'));
     game.menu();
 </script>
 </body>

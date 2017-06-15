@@ -1,13 +1,23 @@
 function UIHelper(c) {
-    this.LoadAndSizeImage = function () {
-        var imgWidth = this.naturalWidth;
+    var toType = function (obj) {
+        return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
+    };
+
+    this.LoadAndSizeImage = function (img) {
+        if (toType(img) === 'event') {
+            img = this;
+        }
+
+        var imgWidth = img.naturalWidth;
         var screenWidth = c.width;
+
+        console.log(screenWidth);
 
         var scaleX = 1;
         if (imgWidth > screenWidth)
             scaleX = screenWidth / imgWidth;
 
-        var imgHeight = this.naturalHeight;
+        var imgHeight = img.naturalHeight;
         var screenHeight = c.height;
 
         var scaleY = 1;
@@ -24,8 +34,8 @@ function UIHelper(c) {
             imgWidth = imgWidth * scale;
         }
 
-        this.cHeight = imgHeight;
-        this.cWidth = imgWidth;
+        img.cHeight = imgHeight;
+        img.cWidth = imgWidth;
     };
 
     return this;
