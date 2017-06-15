@@ -1,0 +1,26 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Alpaca Jump</title>
+</head>
+
+<body style="background: black;padding:0; margin: 0">
+<div style="text-align: center;">
+    <canvas id="game"></canvas>
+</div>
+
+<script src="/js/taskRunner.js"></script>
+<script src="/js/UIHelper.js"></script>
+<script src="/js/game.js"></script>
+
+<script>
+    var c = document.getElementById('game');
+
+    var game = new AlapcaRun(c);
+    game.menu();
+</script>
+</body>
+</html>
