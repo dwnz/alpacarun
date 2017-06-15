@@ -1,4 +1,4 @@
-function AlpacaRun(canvas) {
+function AlpacaRun(canvas, isDebug) {
     var t = this;
     t.isRunning = false;
     t.playSound = true;
@@ -11,10 +11,17 @@ function AlpacaRun(canvas) {
     var scale;
     var heightScale;
 
+    var fps = 500;
+
     // Setup task runner to build game UI
     var taskRunner = new TaskRunner();
     var uiHelper = new UIHelper(canvas);
     var addStarsTimeout;
+
+    if (isDebug) {
+        var debug = new Debug();
+        debug.run();
+    }
 
     t.start = function () {
         t.isRunning = true;
@@ -177,8 +184,8 @@ function AlpacaRun(canvas) {
      }*/
 
     // Load tasks
-    taskRunner.add(1, Draw);
-    taskRunner.add(1, AlpacaJump);
+    taskRunner.add(1000 / fps, Draw);
+    taskRunner.add(5, AlpacaJump);
     taskRunner.add(20, MoveClouds);
     taskRunner.add(40, MoveForegroundClouds);
     taskRunner.add(60, MoveBushes);
@@ -328,7 +335,7 @@ function AlpacaRun(canvas) {
 
     function AddStarsIfNeeded() {
         var toAdd = Math.random() * (3 - 1) + 1;
-        var toWait = Math.random() * ((3000 - 1000) + 1000);
+        var toWait = Math.random() * ((5000 - 2000) + 2000);
 
         for (var i = 0; i < toAdd; i++) {
             var yPosition = Math.random() * ((470 * heightScale) - (250 * heightScale)) + (250 * heightScale);
@@ -377,39 +384,41 @@ function AlpacaRun(canvas) {
     }
 
     function Draw() {
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        window.requestAnimationFrame(function (p1) {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-        ctx.drawImage(img, canvasWidth, 0, canvasWidth, canvasHeight);
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            ctx.drawImage(img, canvasWidth, 0, canvasWidth, canvasHeight);
 
-        ctx.drawImage(clouds, position.clouds1, (10 * scale), clouds.cWidth, clouds.cHeight);
-        ctx.drawImage(clouds, position.clouds2, (10 * scale), clouds.cWidth, clouds.cHeight);
+            ctx.drawImage(clouds, position.clouds1, (10 * scale), clouds.cWidth, clouds.cHeight);
+            ctx.drawImage(clouds, position.clouds2, (10 * scale), clouds.cWidth, clouds.cHeight);
 
-        ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
-        ctx.drawImage(clouds2, position.clouds4, 0, canvasWidth, clouds2.cHeight);
+            ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
+            ctx.drawImage(clouds2, position.clouds4, 0, canvasWidth, clouds2.cHeight);
 
-        ctx.drawImage(bushes, position.bushes1, 0, canvasWidth, bushes.cHeight);
-        ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);
+            ctx.drawImage(bushes, position.bushes1, 0, canvasWidth, bushes.cHeight);
+            ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);
 
-        ctx.drawImage(trees, position.ground1, 0, canvasWidth, trees.cHeight);
-        ctx.drawImage(trees, position.ground2, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(trees, position.ground1, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(trees, position.ground2, 0, canvasWidth, trees.cHeight);
 
-        ctx.drawImage(ground, position.ground1, 0, canvasWidth, trees.cHeight);
-        ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(ground, position.ground1, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
 
-        for (var i = 0; i < stars.length; i++) {
-            if (stars[i].x < -32) {
-                stars.splice(i, 1);
-                return;
+            for (var i = 0; i < stars.length; i++) {
+                if (stars[i].x < -32) {
+                    stars.splice(i, 1);
+                    return;
+                }
+
+                ctx.drawImage(star, stars[i].x, stars[i].y, (32 * scale), (32 * scale));
+                stars[i].x = stars[i].x - level;
             }
 
-            ctx.drawImage(star, stars[i].x, stars[i].y, (32 * scale), (32 * scale));
-            stars[i].x = stars[i].x - level;
-        }
+            ctx.drawImage(alpaca, 160 * scale, ((400 * scale) - position.alpaca) * scale, 90 * scale, 100 * scale);
 
-        ctx.drawImage(alpaca, 160 * scale, ((400 * scale) - position.alpaca) * scale, 90 * scale, 100 * scale);
-
-        ctx.font = "30px Arial";
-        ctx.fillText("Points: " + points, 10, 30);
+            ctx.font = "30px Arial";
+            ctx.fillText("Points: " + points, 10, 30);
+        })
     }
 }

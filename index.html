@@ -18,6 +18,7 @@
         Built by <a href="https://twitter.com/dwnz">@dwnz</a>
         |
         <a href="https://github.com/dwnz/alpacarun">Github</a>
+        <span id="debug"></span>
     </p>
 </div>
 <div class="rotate">
@@ -26,10 +27,11 @@
 
 <script src="/js/taskRunner.js"></script>
 <script src="/js/UIHelper.js"></script>
+<script src="/js/debug.js"></script>
 <script src="/js/game.js"></script>
 
 <script>
-    var game = new AlpacaRun(document.getElementById('game'));
+    var game = new AlpacaRun(document.getElementById('game'), true);
     game.menu();
 </script>
 </body>
