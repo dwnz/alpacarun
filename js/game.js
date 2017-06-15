@@ -1,3 +1,5 @@
+// TODO: Massive refactor...
+
 function AlpacaRun(canvas, isDebug) {
     var t = this;
     t.isRunning = false;
