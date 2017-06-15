@@ -11,8 +11,6 @@ function UIHelper(c) {
         var imgWidth = img.naturalWidth;
         var screenWidth = c.width;
 
-        console.log(screenWidth);
-
         var scaleX = 1;
         if (imgWidth > screenWidth)
             scaleX = screenWidth / imgWidth;

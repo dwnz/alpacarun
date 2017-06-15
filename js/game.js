@@ -12,6 +12,7 @@ function AlpacaRun(canvas, isDebug) {
     var heightScale;
 
     var fps = 500;
+    var gameLength = 30;
 
     // Setup task runner to build game UI
     var taskRunner = new TaskRunner();
@@ -23,14 +24,23 @@ function AlpacaRun(canvas, isDebug) {
         debug.run();
     }
 
-    t.start = function () {
-        t.isRunning = true;
+    this.start = function () {
+        this.reset();
+        this.isRunning = true;
         taskRunner.run();
         addStarsTimeout = setTimeout(AddStarsIfNeeded, 1000);
     };
 
+    this.reset = function () {
+        secondsLeft = gameLength;
+        stars = [];
+        starIndex = 0;
+        level = 0.4;
+        points = 0;
+    };
+
     // Gross resize function... Need to refactor
-    t.resize = function () {
+    this.resize = function () {
         t.isRunning = false;
         clearTimeout(addStarsTimeout);
         taskRunner.stop();
@@ -88,9 +98,12 @@ function AlpacaRun(canvas, isDebug) {
     var maxJumpHeight = 200 * scale;
     var isJumping = false;
     var points = 0;
+    var secondsLeft = gameLength;
     var level = 0.4;
     var stars = [];
     var starIndex = 0;
+
+    t.reset();
 
     // Keep track of positions
     var position = {
@@ -164,7 +177,12 @@ function AlpacaRun(canvas, isDebug) {
     alpaca.src = '/img/alpaca.png';
 
     var star = new Image();
+    star.onload = uiHelper.LoadAndSizeImage;
     star.src = '/img/apple.png';
+
+    var results = new Image();
+    results.onload = uiHelper.LoadAndSizeImage;
+    results.src = '/img/results.jpg';
 
     // Check that the browser supports audio
     var ding;
@@ -192,6 +210,7 @@ function AlpacaRun(canvas, isDebug) {
     taskRunner.add(10, MoveBackground);
     taskRunner.add(10, DetectCollision);
     taskRunner.add(50, MoveAlpaca);
+    taskRunner.add(1000, Countdown);
     taskRunner.add(3000, ChangeLevel);
 
     // Menu "scene"
@@ -214,6 +233,35 @@ function AlpacaRun(canvas, isDebug) {
             );
         };
         splash.src = '/img/splash.jpg';
+    };
+
+    // Results "scene"
+    t.drawResults = function () {
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(results, 0, 0, canvasWidth, canvasHeight);
+
+        var appleWidth = 32 * scale;
+        var appleHeight = 32 * heightScale;
+
+        ctx.drawImage(
+            star,
+            (canvasWidth / 2) - ((appleWidth / 2) + (48 * scale)),
+            (canvasHeight / 2) - (appleHeight / 2),
+            appleWidth,
+            appleHeight
+        );
+
+        ctx.fillText(
+            points,
+            (canvasWidth / 2) - (appleWidth / 2),
+            (canvasHeight / 2) - (appleHeight / 2) + (28 * scale)
+        );
+
+        ctx.fillText(
+            "Click/tap to go again",
+            (canvasWidth / 2) - (130 * scale),
+            canvasHeight - (50 * scale)
+        )
     };
 
     // CODEZ
@@ -345,16 +393,11 @@ function AlpacaRun(canvas, isDebug) {
             starIndex++;
         }
 
-        setTimeout(AddStarsIfNeeded, toWait);
+        addStarsTimeout = setTimeout(AddStarsIfNeeded, toWait);
     }
 
     function ChangeLevel() {
         level = level + 0.1;
-
-        if (level >= 10) {
-            clearTimeout(addStarsTimeout);
-            taskRunner.stop();
-        }
     }
 
     function DetectCollision() {
@@ -383,42 +426,59 @@ function AlpacaRun(canvas, isDebug) {
         }
     }
 
+    function Countdown() {
+        secondsLeft--;
+
+        if (secondsLeft === 0) {
+            t.isRunning = false;
+            clearTimeout(addStarsTimeout);
+            taskRunner.stop();
+
+            setTimeout(function () {
+                t.drawResults();
+            }, 50);
+        }
+    }
+
     function Draw() {
-        window.requestAnimationFrame(function (p1) {
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        if (t.isRunning) {
+            window.requestAnimationFrame(function (p1) {
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-            ctx.drawImage(img, canvasWidth, 0, canvasWidth, canvasHeight);
+                ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+                ctx.drawImage(img, canvasWidth, 0, canvasWidth, canvasHeight);
 
-            ctx.drawImage(clouds, position.clouds1, (10 * scale), clouds.cWidth, clouds.cHeight);
-            ctx.drawImage(clouds, position.clouds2, (10 * scale), clouds.cWidth, clouds.cHeight);
+                ctx.drawImage(clouds, position.clouds1, (10 * scale), clouds.cWidth, clouds.cHeight);
+                ctx.drawImage(clouds, position.clouds2, (10 * scale), clouds.cWidth, clouds.cHeight);
 
-            ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
-            ctx.drawImage(clouds2, position.clouds4, 0, canvasWidth, clouds2.cHeight);
+                ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
+                ctx.drawImage(clouds2, position.clouds4, 0, canvasWidth, clouds2.cHeight);
 
-            ctx.drawImage(bushes, position.bushes1, 0, canvasWidth, bushes.cHeight);
-            ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);
+                ctx.drawImage(bushes, position.bushes1, 0, canvasWidth, bushes.cHeight);
+                ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);
 
-            ctx.drawImage(trees, position.ground1, 0, canvasWidth, trees.cHeight);
-            ctx.drawImage(trees, position.ground2, 0, canvasWidth, trees.cHeight);
+                ctx.drawImage(trees, position.ground1, 0, canvasWidth, trees.cHeight);
+                ctx.drawImage(trees, position.ground2, 0, canvasWidth, trees.cHeight);
 
-            ctx.drawImage(ground, position.ground1, 0, canvasWidth, trees.cHeight);
-            ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
+                ctx.drawImage(ground, position.ground1, 0, canvasWidth, trees.cHeight);
+                ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
 
-            for (var i = 0; i < stars.length; i++) {
-                if (stars[i].x < -32) {
-                    stars.splice(i, 1);
-                    return;
+                for (var i = 0; i < stars.length; i++) {
+                    if (stars[i].x < -32) {
+                        stars.splice(i, 1);
+                        return;
+                    }
+
+                    ctx.drawImage(star, stars[i].x, stars[i].y, (32 * scale), (32 * scale));
+                    stars[i].x = stars[i].x - level;
                 }
 
-                ctx.drawImage(star, stars[i].x, stars[i].y, (32 * scale), (32 * scale));
-                stars[i].x = stars[i].x - level;
-            }
+                ctx.drawImage(alpaca, 160 * scale, ((400 * scale) - position.alpaca) * scale, 90 * scale, 100 * scale);
 
-            ctx.drawImage(alpaca, 160 * scale, ((400 * scale) - position.alpaca) * scale, 90 * scale, 100 * scale);
-
-            ctx.font = "30px Arial";
-            ctx.fillText("Points: " + points, 10, 30);
-        })
+                ctx.font = "30px Arial";
+                ctx.fillText("Apples: " + points, 10, 30);
+                ctx.fillText(secondsLeft + " seconds left", canvasWidth - 210, 30);
+            })
+        }
     }
 }
