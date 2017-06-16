@@ -34,16 +34,13 @@
     <img src="/img/rotate.png">
 </div>
 
-<script src="//hammerjs.github.io/dist/hammer.min.js"></script>
-<script src="/bower_components/async/dist/async.min.js"></script>
-<script src="/js/taskRunner.js"></script>
-<script src="/js/UIHelper.js"></script>
-<script src="/js/debug.js"></script>
-<script src="/js/game.js"></script>
+<script src="/js/dist/game.js"></script>
 
 <script>
-    var game = new AlpacaRun(document.getElementById('game'), false);
-    game.init();
+    var game = new AlpacaRun(document.getElementById('game'));
+    game.whenReady(function () {
+        game.run();
+    });
 </script>
 
 <script>
