@@ -1,4 +1,6 @@
-<html manifest="offline.txt">
+<html>
+<!--manifest="offline.txt">
+<head>-->
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -34,14 +36,13 @@
     <img src="/img/rotate.png">
 </div>
 
-<script src="/js/taskRunner.js"></script>
-<script src="/js/UIHelper.js"></script>
-<script src="/js/debug.js"></script>
-<script src="/js/game.js"></script>
+<script src="/js/dist/game.js"></script>
 
 <script>
-    var game = new AlpacaRun(document.getElementById('game'), true);
-    game.menu();
+    var game = new AlpacaRun(document.getElementById('game'));
+    game.whenReady(function () {
+        game.run();
+    });
 </script>
 
 <script>

@@ -66,8 +66,9 @@ function AlpacaRun(canvas, isDebug) {
             t.menu();
 
             // Rebuild sizing across images
-            uiHelper.LoadAndSizeImage(img);
-            uiHelper.LoadAndSizeImage(trees);
+            backgroundImage.resize();
+            trees.resize();
+
             uiHelper.LoadAndSizeImage(ground);
             uiHelper.LoadAndSizeImage(clouds);
             uiHelper.LoadAndSizeImage(clouds2);
@@ -150,17 +151,14 @@ function AlpacaRun(canvas, isDebug) {
     });
 
     // Load assets
-    var img = new Image();
-    img.onload = uiHelper.LoadAndSizeImage;
-    img.src = '/img/_11_background.png';
+    var backgroundImage = new ImageElement(canvas, '/img/_11_background.png');
+    var trees = new ImageElement(canvas, '/img/_02_trees and bushes.png');
+    var ground = new ImageElement(canvas, '/img/_01_ground.png');
+    var alpaca = new ImageElement(canvas, '/img/alpaca.png');
 
-    var trees = new Image();
-    trees.onload = uiHelper.LoadAndSizeImage;
-    trees.src = '/img/_02_trees and bushes.png';
-
-    var ground = new Image();
-    ground.onload = uiHelper.LoadAndSizeImage;
-    ground.src = '/img/_01_ground.png';
+    //var ground = new Image();
+    //ground.onload = uiHelper.LoadAndSizeImage;
+    //ground.src = '/img/_01_ground.png';
 
     var clouds = new Image();
     clouds.onload = uiHelper.LoadAndSizeImage;
@@ -174,9 +172,9 @@ function AlpacaRun(canvas, isDebug) {
     bushes.onload = uiHelper.LoadAndSizeImage;
     bushes.src = '/img/_04_bushes.png';
 
-    var alpaca = new Image();
-    alpaca.onload = uiHelper.LoadAndSizeImage;
-    alpaca.src = '/img/alpaca.png';
+    /*var alpaca = new Image();
+     alpaca.onload = uiHelper.LoadAndSizeImage;
+     alpaca.src = '/img/alpaca.png';*/
 
     var star = new Image();
     star.onload = uiHelper.LoadAndSizeImage;
@@ -223,11 +221,11 @@ function AlpacaRun(canvas, isDebug) {
         splash.onload = function () {
             ctx.drawImage(splash, 0, 0, canvasWidth, canvasHeight);
 
-            var alpacaWidth = (alpaca.cWidth / 2) * scale;
-            var alpacaHeight = (alpaca.cHeight / 2) * heightScale;
+            var alpacaWidth = (alpaca.width / 2) * scale;
+            var alpacaHeight = (alpaca.height / 2) * heightScale;
 
             ctx.drawImage(
-                alpaca,
+                alpaca.get(),
                 (canvasWidth / 2) - (alpacaWidth / 2),
                 (canvasHeight / 2) - (alpacaHeight / 3),
                 alpacaWidth,
@@ -444,26 +442,26 @@ function AlpacaRun(canvas, isDebug) {
 
     function Draw() {
         if (t.isRunning) {
-            window.requestAnimationFrame(function (p1) {
+            window.requestAnimationFrame(function () {
                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-                ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-                ctx.drawImage(img, canvasWidth, 0, canvasWidth, canvasHeight);
+                ctx.drawImage(backgroundImage.get(), 0, 0, canvasWidth, canvasHeight);
+                ctx.drawImage(backgroundImage.get(), canvasWidth, 0, canvasWidth, canvasHeight);
 
                 ctx.drawImage(clouds, position.clouds1, (10 * scale), clouds.cWidth, clouds.cHeight);
                 ctx.drawImage(clouds, position.clouds2, (10 * scale), clouds.cWidth, clouds.cHeight);
 
-                ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
+                /*ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
                 ctx.drawImage(clouds2, position.clouds4, 0, canvasWidth, clouds2.cHeight);
 
                 ctx.drawImage(bushes, position.bushes1, 0, canvasWidth, bushes.cHeight);
-                ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);
+                ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);*/
 
-                ctx.drawImage(trees, position.ground1, 0, canvasWidth, trees.cHeight);
-                ctx.drawImage(trees, position.ground2, 0, canvasWidth, trees.cHeight);
+                ctx.drawImage(trees.get(), position.ground1, 0, canvasWidth, trees.height);
+                ctx.drawImage(trees.get(), position.ground2, 0, canvasWidth, trees.height);
 
-                ctx.drawImage(ground, position.ground1, 0, canvasWidth, trees.cHeight);
-                ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
+                ctx.drawImage(ground.get(), position.ground1, 0, canvasWidth, trees.height);
+                ctx.drawImage(ground.get(), position.ground2, 0, canvasWidth, trees.height);
 
                 for (var i = 0; i < stars.length; i++) {
                     if (stars[i].x < -32) {
@@ -475,7 +473,7 @@ function AlpacaRun(canvas, isDebug) {
                     stars[i].x = stars[i].x - level;
                 }
 
-                ctx.drawImage(alpaca, 160 * scale, ((400 * scale) - position.alpaca) * scale, 90 * scale, 100 * scale);
+                ctx.drawImage(alpaca.get(), 160 * scale, ((400 * scale) - position.alpaca) * scale, 90 * scale, 100 * scale);
 
                 ctx.font = "30px Arial";
                 ctx.fillText("Apples: " + points, 10, 30);
