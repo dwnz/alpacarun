@@ -6,20 +6,170 @@ function AlpacaRun(canvas, isDebug) {
     t.playSound = true;
 
     var ctx = canvas.getContext("2d");
+    var uiHelper = new UIHelper(canvas);
+    var taskRunner = new TaskRunner();
 
     // Display variables
     var canvasWidth;
     var canvasHeight;
-    var scale;
+    var scale = 1;
     var heightScale;
 
-    var fps = 500;
+    // Game properties
     var gameLength = 30;
-
-    // Setup task runner to build game UI
-    var taskRunner = new TaskRunner();
-    var uiHelper = new UIHelper(canvas);
+    var maxJumpHeight = 200 * scale;
+    var isJumping = false;
+    var points = 0;
+    var secondsLeft = gameLength;
+    var level = 0.4;
+    var stars = [];
+    var starIndex = 0;
     var addStarsTimeout;
+
+    // Asset holders
+    var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash;
+
+    // Keep track of positions
+    var position = {
+        clouds1: 0,
+        clouds2: 0,
+        clouds3: 0,
+        clouds4: 0,
+
+        ground1: 0,
+        ground2: 0,
+
+        bushes1: 0,
+        bushes2: 0,
+
+        alpaca: 0,
+        alpacaDirection: 'up',
+        alpacaWidth: 0,
+        alpacaHeight: 0
+    };
+
+    t.init = function () {
+        async.waterfall(
+            [
+                function (next) {
+                    canvasWidth = window.innerWidth;
+                    canvasHeight = window.innerHeight;
+
+                    if (canvasWidth > 800) {
+                        canvasWidth = 800;
+                        canvasHeight = 600;
+                    }
+
+                    scale = canvasWidth / 800;
+                    heightScale = canvasHeight / 600;
+
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+
+                    maxJumpHeight = Math.floor(200 * scale);
+
+                    next();
+                },
+                function (next) {
+                    position.clouds1 = 0;
+                    position.clouds2 = canvasWidth;
+                    position.clouds3 = 0;
+                    position.clouds4 = canvasWidth;
+
+                    position.ground1 = 0;
+                    position.ground2 = canvasWidth;
+
+                    position.bushes1 = 0;
+                    position.bushes2 = canvasWidth;
+
+                    position.alpaca = 0;
+                    position.alpacaDirection = 'up';
+
+                    position.alpacaWidth = Math.floor(90 * scale);
+                    position.alpacaHeight = Math.floor(100 * scale);
+
+                    next();
+                },
+                function (next) {
+                    uiHelper.LoadImage('splash.jpg', function (image) {
+                        splash = image;
+                        next();
+                    });
+                },
+                function (next) {
+                    uiHelper.LoadImage('_11_background.png', function (image) {
+                        img = image;
+                        next();
+                    });
+                },
+                function (next) {
+                    uiHelper.LoadImage('_02_trees and bushes.png', function (image) {
+                        trees = image;
+                        next();
+                    })
+                },
+                function (next) {
+                    uiHelper.LoadImage('_01_ground.png', function (image) {
+                        ground = image;
+                        next();
+                    })
+                },
+                function (next) {
+                    uiHelper.LoadImage('_08_clouds.png', function (image) {
+                        clouds = image;
+                        next();
+                    })
+                },
+                function (next) {
+                    uiHelper.LoadImage('_07_huge_clouds.png', function (image) {
+                        clouds2 = image;
+                        next();
+                    });
+                },
+                function (next) {
+                    uiHelper.LoadImage('_04_bushes.png', function (image) {
+                        bushes = image;
+                        next();
+                    });
+                },
+                function (next) {
+                    uiHelper.LoadImage('alpaca.png', function (image) {
+                        alpaca = image;
+                        next();
+                    })
+                },
+                function (next) {
+                    uiHelper.LoadImage('apple.png', function (image) {
+                        star = image;
+                        next();
+                    })
+                },
+                function (next) {
+                    uiHelper.LoadImage('results.jpg', function (image) {
+                        results = image;
+                        next();
+                    })
+                },
+                function (next) {
+                    var hammertime = new Hammer(canvas);
+                    hammertime.on('tap', function () {
+                        if (!t.isRunning) {
+                            t.start();
+                            return;
+                        }
+
+                        position.alpacaDirection = 'up';
+                        isJumping = true;
+                    });
+
+                    next();
+                }
+            ],
+            function () {
+                t.menu();
+            }
+        );
+    };
 
     if (isDebug) {
         var debug = new Debug();
@@ -29,8 +179,25 @@ function AlpacaRun(canvas, isDebug) {
     this.start = function () {
         this.reset();
         this.isRunning = true;
+
+        for (var i = 0; i < Math.random() * (10 - 2) + 2; i++) {
+            var yPosition = Math.random() * ((470 * heightScale) - (250 * heightScale)) + (250 * heightScale);
+            var xPosition = Math.random() * (800 - 200 ) + 200;
+
+            stars.push({
+                x: Math.floor(xPosition * scale),
+                y: yPosition,
+                i: starIndex,
+                clean: true,
+                h: Math.floor(32 * scale),
+                w: Math.floor(32 * scale)
+            });
+            starIndex++;
+        }
+
         taskRunner.run();
-        addStarsTimeout = setTimeout(AddStarsIfNeeded, 1000);
+        requestAnimationFrame(Draw);
+        addStarsTimeout = setTimeout(AddStarsIfNeeded, 100);
     };
 
     this.reset = function () {
@@ -61,67 +228,37 @@ function AlpacaRun(canvas, isDebug) {
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
 
+        position.alpacaWidth = Math.floor(90 * scale);
+        position.alpacaHeight = Math.floor(100 * scale);
+
+        // Rebuild sizing across images
+        uiHelper.LoadAndSizeImage(img);
+        uiHelper.LoadAndSizeImage(trees);
+        uiHelper.LoadAndSizeImage(ground);
+        uiHelper.LoadAndSizeImage(clouds);
+        uiHelper.LoadAndSizeImage(clouds2);
+        uiHelper.LoadAndSizeImage(bushes);
+        uiHelper.LoadAndSizeImage(alpaca);
+        uiHelper.LoadAndSizeImage(star);
+
+        position.clouds1 = 0;
+        position.clouds2 = canvasWidth;
+        position.clouds3 = 0;
+        position.clouds4 = canvasWidth;
+
+        position.ground1 = 0;
+        position.ground2 = canvasWidth;
+
+        position.bushes1 = 0;
+        position.bushes2 = canvasWidth;
+
+        position.alpaca = 0;
+        position.alpacaDirection = 'up';
+
         if (t.menu) {
             uiHelper = new UIHelper(canvas);
             t.menu();
-
-            // Rebuild sizing across images
-            uiHelper.LoadAndSizeImage(img);
-            uiHelper.LoadAndSizeImage(trees);
-            uiHelper.LoadAndSizeImage(ground);
-            uiHelper.LoadAndSizeImage(clouds);
-            uiHelper.LoadAndSizeImage(clouds2);
-            uiHelper.LoadAndSizeImage(bushes);
-            uiHelper.LoadAndSizeImage(alpaca);
-            uiHelper.LoadAndSizeImage(star);
-
-            position = {
-                clouds1: 0,
-                clouds2: canvasWidth,
-                clouds3: 0,
-                clouds4: canvasWidth,
-
-                ground1: 0,
-                ground2: canvasWidth,
-
-                bushes1: 0,
-                bushes2: canvasWidth,
-
-                alpaca: 0,
-                alpacaDirection: 'up'
-            };
         }
-    };
-
-    // Setup core display
-    t.resize();
-
-    // Game properties
-    var maxJumpHeight = 200 * scale;
-    var isJumping = false;
-    var points = 0;
-    var secondsLeft = gameLength;
-    var level = 0.4;
-    var stars = [];
-    var starIndex = 0;
-
-    t.reset();
-
-    // Keep track of positions
-    var position = {
-        clouds1: 0,
-        clouds2: canvasWidth,
-        clouds3: 0,
-        clouds4: canvasWidth,
-
-        ground1: 0,
-        ground2: canvasWidth,
-
-        bushes1: 0,
-        bushes2: canvasWidth,
-
-        alpaca: 0,
-        alpacaDirection: 'up'
     };
 
     // Attach keypress event
@@ -138,53 +275,6 @@ function AlpacaRun(canvas, isDebug) {
                 break;
         }
     });
-
-    canvas.addEventListener('click', function () {
-        if (!t.isRunning) {
-            t.start();
-            return;
-        }
-
-        position.alpacaDirection = 'up';
-        isJumping = true;
-    });
-
-    // Load assets
-    var img = new Image();
-    img.onload = uiHelper.LoadAndSizeImage;
-    img.src = '/img/_11_background.png';
-
-    var trees = new Image();
-    trees.onload = uiHelper.LoadAndSizeImage;
-    trees.src = '/img/_02_trees and bushes.png';
-
-    var ground = new Image();
-    ground.onload = uiHelper.LoadAndSizeImage;
-    ground.src = '/img/_01_ground.png';
-
-    var clouds = new Image();
-    clouds.onload = uiHelper.LoadAndSizeImage;
-    clouds.src = '/img/_08_clouds.png';
-
-    var clouds2 = new Image();
-    clouds2.onload = uiHelper.LoadAndSizeImage;
-    clouds2.src = '/img/_07_huge_clouds.png';
-
-    var bushes = new Image();
-    bushes.onload = uiHelper.LoadAndSizeImage;
-    bushes.src = '/img/_04_bushes.png';
-
-    var alpaca = new Image();
-    alpaca.onload = uiHelper.LoadAndSizeImage;
-    alpaca.src = '/img/alpaca.png';
-
-    var star = new Image();
-    star.onload = uiHelper.LoadAndSizeImage;
-    star.src = '/img/apple.png';
-
-    var results = new Image();
-    results.onload = uiHelper.LoadAndSizeImage;
-    results.src = '/img/results.jpg';
 
     // Check that the browser supports audio
     var ding;
@@ -204,7 +294,7 @@ function AlpacaRun(canvas, isDebug) {
      }*/
 
     // Load tasks
-    taskRunner.add(1000 / fps, Draw);
+    //taskRunner.add(1000 / fps, Draw);
     taskRunner.add(5, AlpacaJump);
     taskRunner.add(20, MoveClouds);
     taskRunner.add(40, MoveForegroundClouds);
@@ -218,23 +308,18 @@ function AlpacaRun(canvas, isDebug) {
     // Menu "scene"
     t.menu = function () {
         window.addEventListener('orientationchange', t.resize);
+        ctx.drawImage(splash, 0, 0, canvasWidth, canvasHeight);
 
-        var splash = new Image();
-        splash.onload = function () {
-            ctx.drawImage(splash, 0, 0, canvasWidth, canvasHeight);
+        var alpacaWidth = (alpaca.cWidth / 2) * scale;
+        var alpacaHeight = (alpaca.cHeight / 2) * heightScale;
 
-            var alpacaWidth = (alpaca.cWidth / 2) * scale;
-            var alpacaHeight = (alpaca.cHeight / 2) * heightScale;
-
-            ctx.drawImage(
-                alpaca,
-                (canvasWidth / 2) - (alpacaWidth / 2),
-                (canvasHeight / 2) - (alpacaHeight / 3),
-                alpacaWidth,
-                alpacaHeight
-            );
-        };
-        splash.src = '/img/splash.jpg';
+        ctx.drawImage(
+            alpaca,
+            (canvasWidth / 2) - (alpacaWidth / 2),
+            (canvasHeight / 2) - (alpacaHeight / 3),
+            alpacaWidth,
+            alpacaHeight
+        );
     };
 
     // Results "scene"
@@ -391,7 +476,14 @@ function AlpacaRun(canvas, isDebug) {
             var yPosition = Math.random() * ((470 * heightScale) - (250 * heightScale)) + (250 * heightScale);
             var xPosition = Math.random() * (1000 - 800 ) + 800;
 
-            stars.push({x: xPosition, y: yPosition, i: starIndex, clean: true});
+            stars.push({
+                x: Math.floor(xPosition * scale),
+                y: yPosition,
+                i: starIndex,
+                clean: true,
+                h: Math.floor(32 * scale),
+                w: Math.floor(32 * scale)
+            });
             starIndex++;
         }
 
@@ -404,13 +496,13 @@ function AlpacaRun(canvas, isDebug) {
 
     function DetectCollision() {
         var alpacaStars = stars.filter(function (item) {
-            return item.x > (160 * scale)
+            return item.x > Math.floor(160 * scale)
                 &&
-                item.x < (260 * scale)
+                item.x < Math.floor(260 * scale)
                 &&
-                item.y > ((400 * heightScale) - position.alpaca)
+                item.y > Math.floor((400 * heightScale) - position.alpaca)
                 &&
-                item.y < ((400 * heightScale) - position.alpaca ) + (100 * heightScale)
+                item.y < Math.floor((400 * heightScale) - position.alpaca) + Math.floor(100 * heightScale)
                 &&
                 item.clean
         });
@@ -444,43 +536,43 @@ function AlpacaRun(canvas, isDebug) {
 
     function Draw() {
         if (t.isRunning) {
-            window.requestAnimationFrame(function (p1) {
-                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-                ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-                ctx.drawImage(img, canvasWidth, 0, canvasWidth, canvasHeight);
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            ctx.drawImage(img, canvasWidth, 0, canvasWidth, canvasHeight);
 
-                ctx.drawImage(clouds, position.clouds1, (10 * scale), clouds.cWidth, clouds.cHeight);
-                ctx.drawImage(clouds, position.clouds2, (10 * scale), clouds.cWidth, clouds.cHeight);
+            ctx.drawImage(clouds, position.clouds1, Math.floor(10 * scale), clouds.cWidth, clouds.cHeight);
+            ctx.drawImage(clouds, position.clouds2, Math.floor(10 * scale), clouds.cWidth, clouds.cHeight);
 
-                ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
-                ctx.drawImage(clouds2, position.clouds4, 0, canvasWidth, clouds2.cHeight);
+            ctx.drawImage(clouds2, position.clouds3, 0, canvasWidth, clouds2.cHeight);
+            ctx.drawImage(clouds2, position.clouds4, 0, canvasWidth, clouds2.cHeight);
 
-                ctx.drawImage(bushes, position.bushes1, 0, canvasWidth, bushes.cHeight);
-                ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);
+            ctx.drawImage(bushes, position.bushes1, 0, canvasWidth, bushes.cHeight);
+            ctx.drawImage(bushes, position.bushes2, 0, canvasWidth, bushes.cHeight);
 
-                ctx.drawImage(trees, position.ground1, 0, canvasWidth, trees.cHeight);
-                ctx.drawImage(trees, position.ground2, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(trees, position.ground1, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(trees, position.ground2, 0, canvasWidth, trees.cHeight);
 
-                ctx.drawImage(ground, position.ground1, 0, canvasWidth, trees.cHeight);
-                ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(ground, position.ground1, 0, canvasWidth, trees.cHeight);
+            ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
 
-                for (var i = 0; i < stars.length; i++) {
-                    if (stars[i].x < -32) {
-                        stars.splice(i, 1);
-                        return;
-                    }
-
-                    ctx.drawImage(star, stars[i].x, stars[i].y, (32 * scale), (32 * scale));
-                    stars[i].x = stars[i].x - level;
+            for (var i = 0; i < stars.length; i++) {
+                if (stars[i].x < -32) {
+                    stars.splice(i, 1);
+                    return;
                 }
 
-                ctx.drawImage(alpaca, 160 * scale, ((400 * scale) - position.alpaca) * scale, 90 * scale, 100 * scale);
+                ctx.drawImage(star, stars[i].x, stars[i].y, stars[i].w, stars[i].h);
+                stars[i].x = stars[i].x - 1;
+            }
 
-                ctx.font = "30px Arial";
-                ctx.fillText("Apples: " + points, 10, 30);
-                ctx.fillText(secondsLeft + " seconds left", canvasWidth - 210, 30);
-            })
+            ctx.drawImage(alpaca, Math.floor(160 * scale), Math.floor(((400 * scale) - position.alpaca) * scale), position.alpacaWidth, position.alpacaHeight);
+
+            ctx.font = "30px Arial";
+            ctx.fillText("Apples: " + points, 10, 30);
+            ctx.fillText(secondsLeft + " seconds left", canvasWidth - 210, 30);
+
+            requestAnimationFrame(Draw);
         }
     }
 }

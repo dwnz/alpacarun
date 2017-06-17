@@ -1,0 +1,20 @@
+{
+  "name": "alpaccajump",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "Daniel Wylie <daniel@danielwylie.me>"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/dwnz/alpacarun",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "async": "^2.4.1"
+  }
+}

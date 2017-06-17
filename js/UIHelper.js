@@ -1,9 +1,11 @@
 function UIHelper(c) {
+    var self = this;
+
     var toType = function (obj) {
         return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
     };
 
-    this.LoadAndSizeImage = function (img) {
+    this.LoadAndSizeImage = function (img, callback) {
         if (toType(img) === 'event') {
             img = this;
         }
@@ -32,8 +34,24 @@ function UIHelper(c) {
             imgWidth = imgWidth * scale;
         }
 
-        img.cHeight = imgHeight;
-        img.cWidth = imgWidth;
+        img.cHeight = Math.floor(imgHeight);
+        img.cWidth = Math.floor(imgWidth);
+
+        if (callback) {
+            callback();
+        }
+    };
+
+    this.LoadImage = function (src, callback) {
+        var image = new Image();
+
+        image.onload = function () {
+            self.LoadAndSizeImage(image, function () {
+                return callback(image);
+            });
+        };
+
+        image.src = '/img/' + src;
     };
 
     return this;
