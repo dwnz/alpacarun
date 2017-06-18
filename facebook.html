@@ -1,0 +1,86 @@
+<html manifest="offline.txt">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Alpaca Jump</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+
+    <meta property="og:url" content="http://alpacarun.danielwylie.me/"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:title" content="Alpaca Run"/>
+    <meta property="og:description" content="How many apples can you get?"/>
+    <meta property="og:image" content="http://alpacarun.danielwylie.me/img/facebook.jpg"/>
+
+    <link rel="apple-touch-icon" href="/img/ios.png">
+</head>
+
+<body>
+<div class="gamebox">
+    <canvas id="game"></canvas>
+    <p>
+        Built by <a href="https://twitter.com/dwnz">@dwnz</a>
+        |
+        <a href="https://github.com/dwnz/alpacarun">Github</a>
+        <span id="debug"></span>
+    </p>
+</div>
+<div class="rotate">
+    <img src="/img/rotate.png">
+</div>
+
+<script src="//hammerjs.github.io/dist/hammer.min.js"></script>
+<script src="/bower_components/async/dist/async.min.js"></script>
+<script src="/js/taskRunner.js"></script>
+<script src="/js/UIHelper.js"></script>
+<script src="/js/debug.js"></script>
+<script src="/js/game.js"></script>
+
+<script>
+    var game = new AlpacaRun(document.getElementById('game'), true);
+    game.init();
+</script>
+
+<script>
+    window.fbAsyncInit = function() {
+        FB.init({
+            appId      : '850866998400343',
+            xfbml      : true,
+            version    : 'v2.9'
+        });
+
+        // ADD ADDITIONAL FACEBOOK CODE HERE
+    };
+
+    (function(d, s, id){
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) {return;}
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<script>
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-101173555-1', 'auto');
+    ga('send', 'pageview');
+</script>
+</body>
+</html>
