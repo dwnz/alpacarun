@@ -179,18 +179,28 @@ function AlpacaRun(canvas, isDebug) {
 
                 function (next) {
                     if (Audio) {
-                        ding = document.createElement("audio");
+                        ding = new Audio('/sound/ding.wav');
                         ding.isSetup = false;
+
+                        var timeout = setTimeout(function () {
+                            // Something went wrong...
+                            ding = {
+                                play: function () {
+                                }
+                            };
+                            assetsLoaded++;
+                            next();
+                        }, 1500);
 
                         // Hack to make sure we don't load audio more than once
                         ding.addEventListener('canplaythrough', function () {
                             if (!ding.isSetup) {
                                 assetsLoaded++;
                                 ding.isSetup = true;
+                                clearTimeout(timeout);
                                 next();
                             }
                         });
-                        ding.src = '/sound/ding.wav';
                     } else {
                         ding = {
                             play: function () {
