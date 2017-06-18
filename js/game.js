@@ -390,8 +390,8 @@ function AlpacaRun(canvas, isDebug) {
 
     // Results "scene"
     t.drawResults = function () {
-        if (Math.floor(starIndex - stars.length) > highScore) {
-            highScore = Math.floor(starIndex - stars.length);
+        if (points > highScore) {
+            highScore = points;
             if (t.hasLocalStorage) {
                 localStorage.setItem("highscore", highScore);
             }
