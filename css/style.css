@@ -2,10 +2,16 @@ body {
     background: black;
     margin: 0;
     padding: 0;
+    overflow: hidden
 }
 
 .gamebox {
     text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 p {
@@ -48,11 +54,5 @@ a:hover {
 
     .rotate {
         display: block;
-    }
-}
-
-@media (min-width: 1200px) {
-    body {
-        margin: 20px;
     }
 }

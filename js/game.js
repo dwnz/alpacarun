@@ -4,6 +4,7 @@ function AlpacaRun(canvas, isDebug) {
     var t = this;
     t.isRunning = false;
     t.playSound = true;
+    t.hasLocalStorage = false;
 
     var ctx = canvas.getContext("2d");
     var uiHelper = new UIHelper(canvas);
@@ -25,6 +26,8 @@ function AlpacaRun(canvas, isDebug) {
     var stars = [];
     var starIndex = 0;
     var addStarsTimeout;
+    var starsGenerated = 0;
+    var highScore = 0;
 
     // Asset holders
     var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash;
@@ -163,6 +166,24 @@ function AlpacaRun(canvas, isDebug) {
                     });
 
                     next();
+                },
+
+                function (next) {
+                    if (localStorage && localStorage.getItem) {
+                        t.hasLocalStorage = true;
+                    }
+
+                    next();
+                },
+
+                function (next) {
+                    if (t.hasLocalStorage) {
+                        if (localStorage.getItem("highscore")) {
+                            highScore = parseInt(localStorage.getItem("highscore"));
+                        }
+                    }
+
+                    next();
                 }
             ],
             function () {
@@ -206,6 +227,9 @@ function AlpacaRun(canvas, isDebug) {
         starIndex = 0;
         level = 0.4;
         points = 0;
+        starsGenerated = 0;
+        position.alpaca = 0;
+        position.alpacaDirection = 'up';
     };
 
     // Gross resize function... Need to refactor
@@ -287,12 +311,6 @@ function AlpacaRun(canvas, isDebug) {
         };
     }
 
-    /* if (Audio && t.playSound) {
-     var backgroundAudio = new Audio('/sound/music.wav');
-     backgroundAudio.loop = true;
-     backgroundAudio.play();
-     }*/
-
     // Load tasks
     //taskRunner.add(1000 / fps, Draw);
     taskRunner.add(5, AlpacaJump);
@@ -302,6 +320,7 @@ function AlpacaRun(canvas, isDebug) {
     taskRunner.add(10, MoveBackground);
     taskRunner.add(10, DetectCollision);
     taskRunner.add(50, MoveAlpaca);
+    taskRunner.add(2, MoveStars);
     taskRunner.add(1000, Countdown);
     taskRunner.add(3000, ChangeLevel);
 
@@ -324,6 +343,13 @@ function AlpacaRun(canvas, isDebug) {
 
     // Results "scene"
     t.drawResults = function () {
+        if (Math.floor(starIndex - stars.length) > highScore) {
+            highScore = Math.floor(starIndex - stars.length);
+            if (t.hasLocalStorage) {
+                localStorage.setItem("highscore", highScore);
+            }
+        }
+
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         ctx.drawImage(results, 0, 0, canvasWidth, canvasHeight);
 
@@ -332,16 +358,22 @@ function AlpacaRun(canvas, isDebug) {
 
         ctx.drawImage(
             star,
-            (canvasWidth / 2) - ((appleWidth / 2) + (48 * scale)),
-            (canvasHeight / 2) - (appleHeight / 2),
+            (canvasWidth / 2) - ((appleWidth / 2) + (76 * scale)),
+            (canvasHeight / 2) - (appleHeight / 2) - (72 * heightScale),
             appleWidth,
             appleHeight
         );
 
         ctx.fillText(
-            points,
-            (canvasWidth / 2) - (appleWidth / 2),
-            (canvasHeight / 2) - (appleHeight / 2) + (28 * scale)
+            points + " out of " + Math.floor(starIndex - stars.length),
+            (canvasWidth / 2) - (appleWidth / 2) - (28 * scale),
+            (canvasHeight / 2) - (appleHeight / 2) - (44 * heightScale)
+        );
+
+        ctx.fillText(
+            "Personal best: " + highScore,
+            (canvasWidth / 2) - (110 * scale),
+            (canvasHeight / 2)
         );
 
         ctx.fillText(
@@ -484,6 +516,7 @@ function AlpacaRun(canvas, isDebug) {
                 h: Math.floor(32 * scale),
                 w: Math.floor(32 * scale)
             });
+
             starIndex++;
         }
 
@@ -534,6 +567,17 @@ function AlpacaRun(canvas, isDebug) {
         }
     }
 
+    function MoveStars() {
+        for (var i = 0; i < stars.length; i++) {
+            if (stars[i].x < -32) {
+                stars.splice(i, 1);
+                return;
+            }
+
+            stars[i].x = stars[i].x - 1;
+        }
+    }
+
     function Draw() {
         if (t.isRunning) {
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -557,13 +601,7 @@ function AlpacaRun(canvas, isDebug) {
             ctx.drawImage(ground, position.ground2, 0, canvasWidth, trees.cHeight);
 
             for (var i = 0; i < stars.length; i++) {
-                if (stars[i].x < -32) {
-                    stars.splice(i, 1);
-                    return;
-                }
-
                 ctx.drawImage(star, stars[i].x, stars[i].y, stars[i].w, stars[i].h);
-                stars[i].x = stars[i].x - 1;
             }
 
             ctx.drawImage(alpaca, Math.floor(160 * scale), Math.floor(((400 * scale) - position.alpaca) * scale), position.alpacaWidth, position.alpacaHeight);
