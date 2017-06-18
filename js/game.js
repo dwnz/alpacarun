@@ -30,7 +30,9 @@ function AlpacaRun(canvas, isDebug) {
     var highScore = 0;
 
     // Asset holders
-    var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash;
+    var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash, ding;
+    var assetCount = 11;
+    var assetsLoaded = 0;
 
     // Keep track of positions
     var position = {
@@ -52,6 +54,18 @@ function AlpacaRun(canvas, isDebug) {
     };
 
     t.init = function () {
+        var loadingScreen = setInterval(function () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "30px Arial";
+            ctx.fillStyle = 'white';
+            ctx.fillText(
+                Math.round((assetsLoaded / assetCount) * 100) + "%",
+                (canvasWidth / 2) - (48 / 2),
+                (canvasHeight / 2) - (48 / 2)
+            );
+            ctx.fillStyle = 'black';
+        }, 1000);
+
         async.waterfall(
             [
                 function (next) {
@@ -94,26 +108,30 @@ function AlpacaRun(canvas, isDebug) {
                     next();
                 },
                 function (next) {
-                    uiHelper.LoadImage('splash.jpg', function (image) {
-                        splash = image;
+                    uiHelper.LoadImage('_11_background.png', function (image) {
+                        img = image;
+                        assetsLoaded++;
                         next();
                     });
                 },
                 function (next) {
-                    uiHelper.LoadImage('_11_background.png', function (image) {
-                        img = image;
+                    uiHelper.LoadImage('splash.jpg', function (image) {
+                        splash = image;
+                        assetsLoaded++;
                         next();
                     });
                 },
                 function (next) {
                     uiHelper.LoadImage('_02_trees and bushes.png', function (image) {
                         trees = image;
+                        assetsLoaded++;
                         next();
                     })
                 },
                 function (next) {
                     uiHelper.LoadImage('_01_ground.png', function (image) {
                         ground = image;
+                        assetsLoaded++;
                         next();
                     })
                 },
@@ -126,33 +144,63 @@ function AlpacaRun(canvas, isDebug) {
                 function (next) {
                     uiHelper.LoadImage('_07_huge_clouds.png', function (image) {
                         clouds2 = image;
+                        assetsLoaded++;
                         next();
                     });
                 },
                 function (next) {
                     uiHelper.LoadImage('_04_bushes.png', function (image) {
                         bushes = image;
+                        assetsLoaded++;
                         next();
                     });
                 },
                 function (next) {
                     uiHelper.LoadImage('alpaca.png', function (image) {
                         alpaca = image;
+                        assetsLoaded++;
                         next();
                     })
                 },
                 function (next) {
                     uiHelper.LoadImage('apple.png', function (image) {
                         star = image;
+                        assetsLoaded++;
                         next();
                     })
                 },
                 function (next) {
                     uiHelper.LoadImage('results.jpg', function (image) {
                         results = image;
+                        assetsLoaded++;
                         next();
                     })
                 },
+
+                function (next) {
+                    if (Audio) {
+                        ding = document.createElement("audio");
+                        ding.isSetup = false;
+
+                        // Hack to make sure we don't load audio more than once
+                        ding.addEventListener('canplaythrough', function () {
+                            if (!ding.isSetup) {
+                                assetsLoaded++;
+                                ding.isSetup = true;
+                                next();
+                            }
+                        });
+                        ding.src = '/sound/ding.wav';
+                    } else {
+                        ding = {
+                            play: function () {
+                            }
+                        };
+                        assetsLoaded++;
+                        next();
+                    }
+                },
+
                 function (next) {
                     var hammertime = new Hammer(canvas);
                     hammertime.on('tap', function () {
@@ -187,6 +235,7 @@ function AlpacaRun(canvas, isDebug) {
                 }
             ],
             function () {
+                clearInterval(loadingScreen);
                 t.menu();
             }
         );
@@ -300,19 +349,7 @@ function AlpacaRun(canvas, isDebug) {
         }
     });
 
-    // Check that the browser supports audio
-    var ding;
-    if (Audio) {
-        ding = new Audio('/sound/ding.wav');
-    } else {
-        ding = {
-            play: function () {
-            }
-        };
-    }
-
     // Load tasks
-    //taskRunner.add(1000 / fps, Draw);
     taskRunner.add(5, AlpacaJump);
     taskRunner.add(20, MoveClouds);
     taskRunner.add(40, MoveForegroundClouds);
@@ -495,8 +532,7 @@ function AlpacaRun(canvas, isDebug) {
         points++;
 
         if (Audio && t.playSound) {
-            var dinger = new Audio('/sound/ding.wav');
-            dinger.play();
+            ding.play();
         }
     }
 
