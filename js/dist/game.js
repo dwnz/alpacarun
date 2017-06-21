@@ -21,6 +21,10 @@ ImageAsset.prototype = new Asset();;function AssetManager() {
         return this.assets[name];
     };
 
+    this.preloadAssets = function () {
+        console.log(this.assets);
+    };
+
     return this;
 };function Element() {
     this.get = function () {
@@ -82,6 +86,8 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
     menuScene.addElement(new ImageElement('menu'), 0, 0, '100%', '100%');
     engine.addScene(menuScene);
 
+    engine.assetManager.preloadAssets();
+
     return engine;
 };function Position(top, left, width, height) {
     this.top = top;
@@ -120,10 +126,12 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
                 height = this.engine.screen.height / percentage;
             }
 
-            debugger;
-
             this.engine.context.drawImage(
-                element.get(), 0, 0, 800, 600
+                element.get(),
+                0,
+                0,
+                800,
+                600
                 /*element.position.top,
                  element.position.left,
                  width,

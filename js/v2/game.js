@@ -9,5 +9,7 @@ function AlpacaRun(canvas, isDebug) {
     menuScene.addElement(new ImageElement('menu'), 0, 0, '100%', '100%');
     engine.addScene(menuScene);
 
+    engine.assetManager.preloadAssets();
+
     return engine;
 }
