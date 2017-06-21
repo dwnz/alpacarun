@@ -28,10 +28,12 @@ function Scene(engine, name) {
                 height = this.engine.screen.height / percentage;
             }
 
-            debugger;
-
             this.engine.context.drawImage(
-                element.get(), 0, 0, 800, 600
+                element.get(),
+                0,
+                0,
+                800,
+                600
                 /*element.position.top,
                  element.position.left,
                  width,

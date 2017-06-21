@@ -9,5 +9,9 @@ function AssetManager() {
         return this.assets[name];
     };
 
+    this.preloadAssets = function () {
+        console.log(this.assets);
+    };
+
     return this;
 }
