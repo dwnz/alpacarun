@@ -5,10 +5,12 @@ function AlpacaRun(canvas, isDebug) {
     t.isRunning = false;
     t.playSound = true;
     t.hasLocalStorage = false;
+    t.paints = 0;
 
     var ctx = canvas.getContext("2d");
     var uiHelper = new UIHelper(canvas);
     var taskRunner = new TaskRunner();
+    var debug;
 
     // Display variables
     var canvasWidth;
@@ -55,15 +57,17 @@ function AlpacaRun(canvas, isDebug) {
 
     t.init = function () {
         var loadingScreen = setInterval(function () {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.font = "30px Arial";
-            ctx.fillStyle = 'white';
-            ctx.fillText(
-                Math.round((assetsLoaded / assetCount) * 100) + "%",
-                (canvasWidth / 2) - (48 / 2),
-                (canvasHeight / 2) - (48 / 2)
-            );
-            ctx.fillStyle = 'black';
+            requestAnimationFrame(function () {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = "30px Arial";
+                ctx.fillStyle = 'white';
+                ctx.fillText(
+                    Math.round((assetsLoaded / assetCount) * 100) + "%",
+                    (canvasWidth / 2) - (48 / 2),
+                    (canvasHeight / 2) - (48 / 2)
+                );
+                ctx.fillStyle = 'black';
+            });
         }, 1000);
 
         async.waterfall(
@@ -252,7 +256,7 @@ function AlpacaRun(canvas, isDebug) {
     };
 
     if (isDebug) {
-        var debug = new Debug();
+        debug = new Debug(this);
         debug.run();
     }
 
@@ -370,6 +374,10 @@ function AlpacaRun(canvas, isDebug) {
     taskRunner.add(2, MoveStars);
     taskRunner.add(1000, Countdown);
     taskRunner.add(3000, ChangeLevel);
+
+    if (isDebug) {
+        taskRunner.add(1000, debug.FPS);
+    }
 
     // Menu "scene"
     t.menu = function () {
@@ -655,6 +663,7 @@ function AlpacaRun(canvas, isDebug) {
             ctx.font = "30px Arial";
             ctx.fillText("Apples: " + points, 10, 30);
             ctx.fillText(secondsLeft + " seconds left", canvasWidth - 210, 30);
+            t.paints++;
 
             requestAnimationFrame(Draw);
         }

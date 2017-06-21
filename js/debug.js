@@ -1,10 +1,16 @@
-function Debug() {
-    var t = this;
+function Debug(engine) {
+    var self = this;
+    this.engine = engine;
 
-    t.run = function () {
+    self.run = function () {
 
     };
 
+    self.FPS = function () {
+        console.log(self.engine.paints);
+        self.engine.paints = 0;
+    };
 
-    return t;
+
+    return self;
 }
