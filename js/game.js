@@ -26,13 +26,16 @@ function AlpacaRun(canvas, isDebug) {
     var secondsLeft = gameLength;
     var level = 0.4;
     var stars = [];
+    var fences = [];
     var starIndex = 0;
+    var fenceIndex = 0;
     var addStarsTimeout;
+    var addFencesTimeout;
     var starsGenerated = 0;
     var highScore = 0;
 
     // Asset holders
-    var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash, ding;
+    var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash, ding, fence;
     var assetCount = 11;
     var assetsLoaded = 0;
 
@@ -174,6 +177,13 @@ function AlpacaRun(canvas, isDebug) {
                     })
                 },
                 function (next) {
+                    uiHelper.LoadImage('fence.png', function (image) {
+                        fence = image;
+                        assetsLoaded++;
+                        next();
+                    })
+                },
+                function (next) {
                     uiHelper.LoadImage('results.jpg', function (image) {
                         results = image;
                         assetsLoaded++;
@@ -280,13 +290,17 @@ function AlpacaRun(canvas, isDebug) {
         }
 
         taskRunner.run();
+
         requestAnimationFrame(Draw);
+
         addStarsTimeout = setTimeout(AddStarsIfNeeded, 100);
+        addFencesTimeout = setTimeout(AddFencesRandomly, 100);
     };
 
     this.reset = function () {
         secondsLeft = gameLength;
         stars = [];
+        fences = [];
         starIndex = 0;
         level = 0.4;
         points = 0;
@@ -299,6 +313,7 @@ function AlpacaRun(canvas, isDebug) {
     this.resize = function () {
         t.isRunning = false;
         clearTimeout(addStarsTimeout);
+        clearTimeout(addFencesTimeout);
         taskRunner.stop();
 
         canvasWidth = window.innerWidth;
@@ -372,6 +387,7 @@ function AlpacaRun(canvas, isDebug) {
     taskRunner.add(10, DetectCollision);
     taskRunner.add(50, MoveAlpaca);
     taskRunner.add(2, MoveStars);
+    taskRunner.add(2, MoveFences);
     taskRunner.add(1000, Countdown);
     taskRunner.add(3000, ChangeLevel);
 
@@ -577,11 +593,82 @@ function AlpacaRun(canvas, isDebug) {
         addStarsTimeout = setTimeout(AddStarsIfNeeded, toWait);
     }
 
+    function AddFencesRandomly() {
+        var toWait = Math.random() * ((3000 - 1000) + 1000);
+
+        if (fences.length === 0 || fences[fences.length - 1].x <= 0) {
+            var yPosition = canvas.height - (150 * heightScale);
+            var xPosition = Math.random() * (1000 - 800 ) + 800;
+
+            fences.push({
+                x: Math.floor(xPosition * scale),
+                y: yPosition,
+                i: fenceIndex,
+                clean: true,
+                h: Math.floor(32 * scale),
+                w: Math.floor(32 * scale)
+            });
+
+            fences.push({
+                x: Math.floor(xPosition * scale),
+                y: yPosition - (32 * scale),
+                i: fenceIndex,
+                clean: true,
+                h: Math.floor(32 * scale),
+                w: Math.floor(32 * scale)
+            });
+
+            fences.push({
+                x: Math.floor(xPosition * scale),
+                y: yPosition + (32 * scale),
+                i: fenceIndex,
+                clean: true,
+                h: Math.floor(32 * scale),
+                w: Math.floor(32 * scale)
+            });
+
+            fenceIndex++;
+        }
+
+        addFencesTimeout = setTimeout(AddFencesRandomly, toWait);
+
+    }
+
     function ChangeLevel() {
         level = level + 0.1;
     }
 
     function DetectCollision() {
+        var fenceHits = fences.filter(function (item) {
+            return item.x > Math.floor(160 * scale)
+                &&
+                item.x < Math.floor(260 * scale)
+                &&
+                item.y > Math.floor((400 * heightScale) - position.alpaca)
+                &&
+                item.y < Math.floor((400 * heightScale) - position.alpaca) + Math.floor(100 * heightScale)
+                &&
+                item.clean
+        });
+
+        if (fenceHits.length > 0) {
+            for (var i = 0; i < fenceHits.length; i++) {
+                for (var x = 0; x < fences.length; x++) {
+                    if (fenceHits[i].i === fences[x].i) {
+                        t.isRunning = false;
+                        clearTimeout(addStarsTimeout);
+                        taskRunner.stop();
+
+                        setTimeout(function () {
+                            t.drawResults();
+                        }, 50);
+                    }
+                }
+            }
+
+            AddPoint();
+        }
+
         var alpacaStars = stars.filter(function (item) {
             return item.x > Math.floor(160 * scale)
                 &&
@@ -632,6 +719,16 @@ function AlpacaRun(canvas, isDebug) {
         }
     }
 
+    function MoveFences() {
+        for (var i = 0; i < fences.length; i++) {
+            if (fences[i].x < -32) {
+                continue;
+            }
+
+            fences[i].x = fences[i].x - 1;
+        }
+    }
+
     function Draw() {
         if (t.isRunning) {
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -659,6 +756,10 @@ function AlpacaRun(canvas, isDebug) {
             }
 
             ctx.drawImage(alpaca, Math.floor(160 * scale), Math.floor(((400 * scale) - position.alpaca) * scale), position.alpacaWidth, position.alpacaHeight);
+
+            for (var i = 0; i < fences.length; i++) {
+                ctx.drawImage(fence, fences[i].x, fences[i].y, fences[i].w, fences[i].h);
+            }
 
             ctx.font = "30px Arial";
             ctx.fillText("Apples: " + points, 10, 30);
