@@ -1,4 +1,5 @@
 function AssetManager() {
+    var self = this;
     this.assets = {};
 
     this.addAsset = function (asset) {
@@ -9,8 +10,30 @@ function AssetManager() {
         return this.assets[name];
     };
 
-    this.preloadAssets = function () {
-        console.log(this.assets);
+    /**
+     * Loads assets into browser cache
+     * @param callback
+     */
+    this.preloadAssets = function (callback) {
+        async.forEachOf(this.assets, function (value, key, next) {
+                switch (value.type) {
+                    case 'image':
+                        self.preloadImage(value, key, next);
+                        break;
+                }
+            },
+            function () {
+                callback();
+            }
+        );
+    };
+
+    this.preloadImage = function (asset, key, next) {
+        asset.image = new Image();
+        asset.image.onload = function () {
+            next();
+        };
+        asset.image.src = asset.src;
     };
 
     return this;
