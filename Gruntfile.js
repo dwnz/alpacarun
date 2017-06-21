@@ -6,7 +6,7 @@ module.exports = function (grunt) {
                 separator: ';'
             },
             game: {
-                src: ['js/v2/*.js'],
+                src: ['bower_components/async/dist/async.js', 'js/v2/*.js'],
                 dest: 'js/dist/game.js'
             }
         },
