@@ -40,7 +40,6 @@ function Element() {
         }
 
         if (typeof this.position.left === 'string') {
-            console.log(this.assetName, this.position);
             if (this.position.left === 'center') {
                 this.position.left = Math.floor((engine.screen.width / 2) - (this.position.width / 2));
             } else {
@@ -48,8 +47,6 @@ function Element() {
                 this.position.top = Math.floor(engine.screen.width / percentage);
             }
         }
-
-        console.log(this.position);
     };
 }
 

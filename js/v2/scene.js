@@ -18,8 +18,8 @@ function Scene(engine, name) {
 
             this.engine.context.drawImage(
                 element.get(),
-                element.position.top,
                 element.position.left,
+                element.position.top,
                 element.position.width,
                 element.position.height
             );
