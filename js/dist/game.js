@@ -5655,7 +5655,6 @@ ImageAsset.prototype = new Asset();;function AssetManager() {
         }
 
         if (typeof this.position.left === 'string') {
-            console.log(this.assetName, this.position);
             if (this.position.left === 'center') {
                 this.position.left = Math.floor((engine.screen.width / 2) - (this.position.width / 2));
             } else {
@@ -5663,8 +5662,6 @@ ImageAsset.prototype = new Asset();;function AssetManager() {
                 this.position.top = Math.floor(engine.screen.width / percentage);
             }
         }
-
-        console.log(this.position);
     };
 }
 
@@ -5690,7 +5687,6 @@ function ImageElement(assetName) {
 }
 
 ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug) {
-    console.log(arguments);
     var self = this;
 
     this.assetManager = new AssetManager();
@@ -5701,7 +5697,6 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
     this.currentScene = 0;
 
     if (isDebug) {
-        console.log("Setup debug");
         this.debug = new Debug(this);
     }
 
@@ -5723,6 +5718,22 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
     };
 
     /**
+     * Changes the scene
+     * @param name
+     */
+    this.changeScene = function (name) {
+        this.detachEvents();
+
+        for (var i = 0; i < this.scenes.length; i++) {
+            if (this.scenes[i].name === name) {
+                this.currentScene = i;
+                self.attachEvents();
+                break;
+            }
+        }
+    };
+
+    /**
      * Adds an asset to the asset register
      * @param asset
      */
@@ -5730,11 +5741,24 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
         this.assetManager.addAsset(asset);
     };
 
+    this.attachEvents = function () {
+        if (self.scenes[self.currentScene].keypress) {
+            document.addEventListener("keypress", self.scenes[self.currentScene].keypress);
+        }
+    };
+
+    this.detachEvents = function () {
+        if (self.scenes[self.currentScene].keypress) {
+            document.removeEventListener("keypress", self.scenes[self.currentScene].keypress);
+        }
+    };
+
     /**
      * Runs the game loop after preloading the assets
      */
     this.runGameLoop = function () {
         self.assetManager.preloadAssets(function () {
+            self.attachEvents();
             requestAnimationFrame(self.drawCurrentScene);
         });
     };
@@ -5758,8 +5782,21 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
     // Setup menu scene
     var menuScene = engine.createScene('menu');
     menuScene.addElement(new ImageElement('menu'), 0, 0, '100%', '100%');
-    menuScene.addElement(new ImageElement('alpaca'), 'center', 'center', 200, 'auto');
+    menuScene.addElement(new ImageElement('alpaca'), 300, 'center', 200, 'auto');
+    menuScene.keypress = function (event) {
+        if (event.keyCode === 32) {
+            engine.changeScene('game');
+        }
+    };
+
     engine.addScene(menuScene);
+
+    // Setup game scene
+    var gameScene = engine.createScene('game');
+    gameScene.keypress = function (event) {
+        console.log(event.keyCode);
+    };
+    engine.addScene(gameScene);
 
     return engine;
 };function Position(top, left, width, height, allowScale) {
@@ -5790,8 +5827,8 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
 
             this.engine.context.drawImage(
                 element.get(),
-                element.position.top,
                 element.position.left,
+                element.position.top,
                 element.position.width,
                 element.position.height
             );

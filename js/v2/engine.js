@@ -1,5 +1,4 @@
 function Engine(canvas, options, isDebug) {
-    console.log(arguments);
     var self = this;
 
     this.assetManager = new AssetManager();
@@ -10,7 +9,6 @@ function Engine(canvas, options, isDebug) {
     this.currentScene = 0;
 
     if (isDebug) {
-        console.log("Setup debug");
         this.debug = new Debug(this);
     }
 
@@ -32,6 +30,22 @@ function Engine(canvas, options, isDebug) {
     };
 
     /**
+     * Changes the scene
+     * @param name
+     */
+    this.changeScene = function (name) {
+        this.detachEvents();
+
+        for (var i = 0; i < this.scenes.length; i++) {
+            if (this.scenes[i].name === name) {
+                this.currentScene = i;
+                self.attachEvents();
+                break;
+            }
+        }
+    };
+
+    /**
      * Adds an asset to the asset register
      * @param asset
      */
@@ -39,11 +53,24 @@ function Engine(canvas, options, isDebug) {
         this.assetManager.addAsset(asset);
     };
 
+    this.attachEvents = function () {
+        if (self.scenes[self.currentScene].keypress) {
+            document.addEventListener("keypress", self.scenes[self.currentScene].keypress);
+        }
+    };
+
+    this.detachEvents = function () {
+        if (self.scenes[self.currentScene].keypress) {
+            document.removeEventListener("keypress", self.scenes[self.currentScene].keypress);
+        }
+    };
+
     /**
      * Runs the game loop after preloading the assets
      */
     this.runGameLoop = function () {
         self.assetManager.preloadAssets(function () {
+            self.attachEvents();
             requestAnimationFrame(self.drawCurrentScene);
         });
     };
