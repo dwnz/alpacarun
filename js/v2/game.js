@@ -3,7 +3,9 @@ function AlpacaRun(canvas, isDebug) {
 
     // Register assets
     engine.addAsset(new ImageAsset('menu', '/img/splash.jpg'));
+
     engine.addAsset(new ImageAsset('alpaca', '/img/alpaca.png'));
+    engine.addAsset(new ImageAsset('fence'));
 
     // Setup menu scene
     var menuScene = engine.createScene('menu');
