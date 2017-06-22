@@ -5741,15 +5741,29 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
         this.assetManager.addAsset(asset);
     };
 
+    /**
+     * Attaches events to the current scene
+     */
     this.attachEvents = function () {
         if (self.scenes[self.currentScene].keypress) {
             document.addEventListener("keypress", self.scenes[self.currentScene].keypress);
         }
+
+        if (self.scenes[self.currentScene].click) {
+            document.addEventListener("click", self.scenes[self.currentScene].click);
+        }
     };
 
+    /**
+     * Removes events from current scene
+     */
     this.detachEvents = function () {
         if (self.scenes[self.currentScene].keypress) {
             document.removeEventListener("keypress", self.scenes[self.currentScene].keypress);
+        }
+
+        if (self.scenes[self.currentScene].click) {
+            document.removeEventListener("click", self.scenes[self.currentScene].click);
         }
     };
 
@@ -5777,7 +5791,9 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
 
     // Register assets
     engine.addAsset(new ImageAsset('menu', '/img/splash.jpg'));
+
     engine.addAsset(new ImageAsset('alpaca', '/img/alpaca.png'));
+    engine.addAsset(new ImageAsset('fence'));
 
     // Setup menu scene
     var menuScene = engine.createScene('menu');
