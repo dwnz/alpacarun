@@ -49,26 +49,3 @@ function Element() {
         }
     };
 }
-
-function ImageElement(assetName) {
-    var self = this;
-
-    this.assetName = assetName;
-    this.position = null;
-
-    this.loadAsset = function (engine, src) {
-        this.image = new Image();
-        this.image.onload = function () {
-            self.resize(engine);
-        };
-        this.image.src = src;
-    };
-
-    this.get = function () {
-        return this.image;
-    };
-
-    return this;
-}
-
-ImageElement.prototype = new Element();

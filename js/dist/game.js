@@ -5547,7 +5547,40 @@ exports.wrapSync = asyncify;
 Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-;function Asset() {
+;;function AnimationGroup(engine) {
+    if (!engine) {
+        throw new Error("Must create animation group from scene");
+    }
+
+    var self = this;
+
+    this.type = 'group';
+    this.engine = engine;
+    this.elements = [];
+    this.position = new Position(0, 0, '100%', '100%', false, this.engine);
+
+    /**
+     * Adds an element to the animation group
+     * @param element
+     */
+    this.addElement = function (element) {
+        this.elements.push(element);
+    };
+
+    /**
+     * Animation group tick
+     */
+    this.internalTick = function (groupAction) {
+        for (var i = 0; i < self.elements.length; i++) {
+            self.elements[i].tick(groupAction);
+        }
+    };
+}
+
+function AnimationGroupAction(top, left) {
+    this.top = top;
+    this.left = left;
+};function Asset() {
     this.name = '';
     this.src = null;
     this.type = null;
@@ -5601,6 +5634,8 @@ ImageAsset.prototype = new Asset();;function AssetManager() {
 };function Debug(engine) {
     var self = this;
     this.engine = engine;
+
+    this.slowPaint = false;
 
     this.log = function () {
         console.log(arguments);
@@ -5663,17 +5698,20 @@ ImageAsset.prototype = new Asset();;function AssetManager() {
             }
         }
     };
-}
-
-function ImageElement(assetName) {
+};;function ImageElement(assetName) {
     var self = this;
 
     this.assetName = assetName;
     this.position = null;
 
-    this.loadAsset = function (engine, src) {
+    this.loadAsset = function (engine, src, callback) {
+        console.log("LOAD ASSET", src);
         this.image = new Image();
         this.image.onload = function () {
+            if (callback) {
+                callback(null, self);
+            }
+
             self.resize(engine);
         };
         this.image.src = src;
@@ -5686,7 +5724,59 @@ function ImageElement(assetName) {
     return this;
 }
 
-ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug) {
+ImageElement.prototype = new Element();
+;function ParallaxElement(element) {
+    var self = this;
+
+    this.element = element;
+    this.position = element.position;
+    this.assetName = this.element.assetName;
+
+    this.get = function () {
+        return this.element.get();
+    };
+
+    this.loadAsset = function (engine, src) {
+        // Copy value to nested element
+        this.element.position = this.position;
+
+        this.element.loadAsset(engine, src, function (err, element) {
+            var builderCanvas = document.createElement("canvas");
+            builderCanvas.width = self.position.width * 2;
+            builderCanvas.height = self.position.height;
+
+            var builderContext = builderCanvas.getContext('2d');
+
+            builderContext.drawImage(element.get(), self.position.left, self.position.top, self.position.width, self.position.height);
+            builderContext.drawImage(element.get(), self.position.width, self.position.top, self.position.width, self.position.height);
+
+            self.position = new Position(self.position.top, self.position.left, self.position.width * 2, self.position.height, false, self.engine);
+            self.element = new CanvasImage(builderCanvas, self.position);
+        });
+    };
+
+    this.tick = function () {
+        if (this.position.left <= -this.position.width / 2) {
+            this.position.left = 0;
+        }
+        else {
+            this.position.left--;
+        }
+    }
+}
+
+ParallaxElement.prototype = new ImageElement();
+
+function CanvasImage(canvas, position) {
+    this.canvas = canvas;
+    this.position = position;
+
+    this.get = function () {
+        return this.canvas;
+    }
+}
+
+CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug) {
     var self = this;
 
     this.assetManager = new AssetManager();
@@ -5723,11 +5813,13 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
      */
     this.changeScene = function (name) {
         this.detachEvents();
+        this.scenes[this.currentScene].stop();
 
         for (var i = 0; i < this.scenes.length; i++) {
             if (this.scenes[i].name === name) {
                 this.currentScene = i;
                 self.attachEvents();
+                this.scenes[this.currentScene].play();
                 break;
             }
         }
@@ -5784,7 +5876,13 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
         self.screen.resize(canvas);
         self.scenes[self.currentScene].paint(canvas);
 
-        requestAnimationFrame(self.drawCurrentScene);
+        if (isDebug && self.debug.slowPaint) {
+            setTimeout(function () {
+                requestAnimationFrame(self.drawCurrentScene);
+            }, 1000);
+        } else {
+            requestAnimationFrame(self.drawCurrentScene);
+        }
     };
 };function AlpacaRun(canvas, isDebug) {
     var engine = new Engine(canvas, null, isDebug);
@@ -5792,13 +5890,26 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
     // Register assets
     engine.addAsset(new ImageAsset('menu', '/img/splash.jpg'));
 
+    // Shared assets
     engine.addAsset(new ImageAsset('alpaca', '/img/alpaca.png'));
-    engine.addAsset(new ImageAsset('fence'));
+    engine.addAsset(new ImageAsset('fence', '/img/fence.png'));
+    engine.addAsset(new ImageAsset('apple', '/img/star.png'));
+
+    // Level assets
+    engine.addAsset(new ImageAsset('background', '/img/_11_background.png'));
+    engine.addAsset(new ImageAsset('treesandbushes', '/img/_02_trees and bushes.png'));
+    engine.addAsset(new ImageAsset('ground', '/img/_01_ground.png'));
+    engine.addAsset(new ImageAsset('clouds', '/img/_08_clouds.png'));
+    engine.addAsset(new ImageAsset('hugeclouds', '/img/_07_huge_clouds.png'));
+    engine.addAsset(new ImageAsset('bushes', '/img/_04_bushes.png'));
+
+    // Results screen
+    engine.addAsset(new ImageAsset('results', '/img/results.jpg'));
 
     // Setup menu scene
     var menuScene = engine.createScene('menu');
     menuScene.addElement(new ImageElement('menu'), 0, 0, '100%', '100%');
-    menuScene.addElement(new ImageElement('alpaca'), 300, 'center', 200, 'auto');
+    menuScene.addElement(new ImageElement('alpaca'), 300, 'center', 200, 200);
     menuScene.keypress = function (event) {
         if (event.keyCode === 32) {
             engine.changeScene('game');
@@ -5809,34 +5920,195 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
 
     // Setup game scene
     var gameScene = engine.createScene('game');
+    var background = gameScene.addElement(new ParallaxElement(new ImageElement('background')), 0, 0, '100%', '100%');
+    var clouds = gameScene.addElement(new ParallaxElement(new ImageElement('clouds')), 0, 0, '100%', '100%');
+    var hugeClouds = gameScene.addElement(new ParallaxElement(new ImageElement('hugeclouds')), 0, 0, '100%', '100%');
+    var bushes = gameScene.addElement(new ParallaxElement(new ImageElement('bushes')), 0, 0, '100%', '100%');
+    var trees = gameScene.addElement(new ParallaxElement(new ImageElement('treesandbushes')), 0, 0, '100%', '100%');
+    var ground = gameScene.addElement(new ParallaxElement(new ImageElement('ground')), 0, 0, '100%', '100%');
+
+    var backgroundGroup = gameScene.createAnimationGroup(background, clouds, hugeClouds, bushes, trees, ground);
+    backgroundGroup.tick = function () {
+        return new AnimationGroupAction(0, -1);
+    };
+
+    var alpacaElement = gameScene.addElement(new ImageElement('alpaca'), 400, 100, 100, 200);
+    alpacaElement.direction = 'up';
+
+    alpacaElement.tick = function () {
+        if (this.position.top > 380 && this.direction === 'up') {
+            this.position.top--;
+            return;
+        }
+
+        if (this.position.top < 400 && this.direction === 'down') {
+            this.position.top++;
+            return;
+        }
+
+        if (this.position.top === 380) {
+            this.direction = 'down';
+            return;
+        }
+
+        if (this.position.top === 400) {
+            this.direction = 'up';
+            return;
+        }
+    };
+
     gameScene.keypress = function (event) {
         console.log(event.keyCode);
     };
+
+    gameScene.addTick(20, alpacaElement);
+    gameScene.addTick(20, backgroundGroup);
+
     engine.addScene(gameScene);
 
     return engine;
-};function Position(top, left, width, height, allowScale) {
+};function Position(top, left, width, height, allowScale, engine) {
     this.top = top;
     this.left = left;
     this.width = width;
     this.height = height;
     this.allowScale = allowScale === undefined ? true : allowScale;
 
+    this.originalSize = {
+        top: top,
+        left: left,
+        width: width,
+        height: height
+    };
+
+    if (typeof this.originalSize.width === 'string') {
+        var percentage = parseFloat(this.originalSize.width.replace('%', '')) / 100;
+        this.width = Math.floor(engine.screen.width / percentage);
+    }
+
+    if (typeof this.originalSize.height === 'string') {
+        if (this.height === 'auto') {
+            if (this.image.width > this.image.height) {
+                var ratio = this.image.width / this.image.height;
+                this.height = Math.floor(this.width * ratio);
+            } else {
+                var ratio = this.image.height / this.image.width;
+                this.height = Math.floor(this.width * ratio);
+            }
+        } else {
+            var percentage = parseFloat(this.originalSize.height.replace('%', '')) / 100;
+            this.height = Math.floor(engine.screen.height / percentage);
+        }
+    }
+
+    if (typeof this.originalSize.top === 'string') {
+        if (this.originalSize.top === 'center') {
+            this.top = Math.floor((engine.screen.height / 2) - (this.height / 2));
+        } else {
+            var percentage = parseFloat(this.originalSize.top.replace('%', '')) / 100;
+            this.top = Math.floor(engine.screen.height / percentage);
+        }
+    }
+
+    if (typeof this.originalSize.left === 'string') {
+        if (this.originalSize.left === 'center') {
+            this.left = Math.floor((engine.screen.width / 2) - (this.width / 2));
+        } else {
+            var percentage = parseFloat(this.originalSize.left.replace('%', '')) / 100;
+            this.top = Math.floor(engine.screen.width / percentage);
+        }
+    }
+
     return this;
 };function Scene(engine, name) {
+    var self = this;
+
     this.engine = engine;
     this.name = name;
 
     this.elements = [];
+    this.taskRunner = new TaskRunner();
 
-    this.addElement = function (element, top, left, width, height) {
-        element.position = new Position(top, left, width, height);
+    /**
+     * Adds an element to the scene
+     * @param element
+     * @param top
+     * @param left
+     * @param width
+     * @param height
+     * @param allowScale
+     * @returns {*}
+     */
+    this.addElement = function (element, top, left, width, height, allowScale) {
+        element.position = new Position(top, left, width, height, allowScale, self.engine);
         element.asset = this.engine.assetManager.get(element.assetName);
         element.loadAsset(engine, element.asset.src);
+        element.index = this.elements.length;
 
         this.elements.push(element);
+
+        return element;
     };
 
+    /**
+     * Creates an animation group
+     * @returns {AnimationGroup}
+     */
+    this.createAnimationGroup = function () {
+        var group = new AnimationGroup(self.engine);
+
+        for (var i = 0; i < arguments.length; i++) {
+            group.addElement(arguments[i]);
+        }
+
+        return group;
+    };
+
+    /**
+     * Called when scene ticks
+     */
+    this.tick = function () {
+        for (var i = 0; i < self.elements.length; i++) {
+            var element = self.elements[i];
+
+            if (element.tick) {
+                element.tick();
+            }
+        }
+    };
+
+    /**
+     * Registers a tick against the scene
+     * @param delay
+     * @param element
+     */
+    this.addTick = function (delay, element) {
+        this.taskRunner.add(delay, function () {
+            var response = element.tick();
+
+            if (element.type === 'group') {
+                element.internalTick(response);
+            }
+        });
+    };
+
+    /**
+     * Starts the scene, sets up things to do
+     */
+    this.play = function () {
+        this.taskRunner.run();
+    };
+
+    /**
+     * Tears down the scene once it's finished running
+     */
+    this.stop = function () {
+        this.taskRunner.stop();
+    };
+
+    /**
+     * Paints the scene to the canvas
+     */
     this.paint = function () {
         for (var i = 0; i < this.elements.length; i++) {
             var element = this.elements[i];
@@ -5893,4 +6165,30 @@ ImageElement.prototype = new Element();;function Engine(canvas, options, isDebug
     window.addEventListener('orientationchange', function () {
         that.resize(canvas);
     });
+};function TaskRunner() {
+    var self = this;
+
+    var taskList = [];
+    var timerList = [];
+
+    self.add = function (ticks, run) {
+        taskList.push({ticks: ticks, run: run});
+    };
+
+    self.run = function () {
+        for (var i = 0; i < taskList.length; i++) {
+            timerList.push(setInterval(taskList[i].run, taskList[i].ticks));
+        }
+    };
+
+    self.stop = function () {
+        for (var i = 0; i < timerList.length; i++) {
+            clearInterval(timerList[i]);
+        }
+
+        timerList = [];
+    };
+
+    return self;
 }
+//# sourceMappingURL=game.js.map

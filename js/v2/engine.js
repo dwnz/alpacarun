@@ -35,11 +35,13 @@ function Engine(canvas, options, isDebug) {
      */
     this.changeScene = function (name) {
         this.detachEvents();
+        this.scenes[this.currentScene].stop();
 
         for (var i = 0; i < this.scenes.length; i++) {
             if (this.scenes[i].name === name) {
                 this.currentScene = i;
                 self.attachEvents();
+                this.scenes[this.currentScene].play();
                 break;
             }
         }
@@ -96,6 +98,12 @@ function Engine(canvas, options, isDebug) {
         self.screen.resize(canvas);
         self.scenes[self.currentScene].paint(canvas);
 
-        requestAnimationFrame(self.drawCurrentScene);
+        if (isDebug && self.debug.slowPaint) {
+            setTimeout(function () {
+                requestAnimationFrame(self.drawCurrentScene);
+            }, 1000);
+        } else {
+            requestAnimationFrame(self.drawCurrentScene);
+        }
     };
 }

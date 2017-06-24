@@ -3,16 +3,17 @@ module.exports = function (grunt) {
         pkg: grunt.file.readJSON('package.json'),
         concat: {
             options: {
-                separator: ';'
+                separator: ';',
+                sourceMap: true
             },
             game: {
-                src: ['bower_components/async/dist/async.js', 'js/v2/*.js'],
+                src: ['bower_components/async/dist/async.js', 'js/v2/**'],
                 dest: 'js/dist/game.js'
             }
         },
 
         watch: {
-            files: ['js/v2/*.js'],
+            files: ['js/v2/**'],
             tasks: ['concat']
         }
     });

@@ -2,6 +2,8 @@ function Debug(engine) {
     var self = this;
     this.engine = engine;
 
+    this.slowPaint = false;
+
     this.log = function () {
         console.log(arguments);
     };
