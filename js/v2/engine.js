@@ -42,9 +42,11 @@ function Engine(canvas, options, isDebug) {
                 this.currentScene = i;
                 self.attachEvents();
                 this.scenes[this.currentScene].play();
-                break;
+                return;
             }
         }
+
+        throw new Error("No scene " + name);
     };
 
     /**
@@ -59,8 +61,8 @@ function Engine(canvas, options, isDebug) {
      * Attaches events to the current scene
      */
     this.attachEvents = function () {
-        if (self.scenes[self.currentScene].keypress) {
-            document.addEventListener("keypress", self.scenes[self.currentScene].keypress);
+        if (self.scenes[self.currentScene].keyPress) {
+            document.addEventListener("keypress", self.scenes[self.currentScene].keyPress);
         }
 
         if (self.scenes[self.currentScene].click) {
@@ -72,8 +74,8 @@ function Engine(canvas, options, isDebug) {
      * Removes events from current scene
      */
     this.detachEvents = function () {
-        if (self.scenes[self.currentScene].keypress) {
-            document.removeEventListener("keypress", self.scenes[self.currentScene].keypress);
+        if (self.scenes[self.currentScene].keyPress) {
+            document.removeEventListener("keypress", self.scenes[self.currentScene].keyPress);
         }
 
         if (self.scenes[self.currentScene].click) {

@@ -363,8 +363,8 @@ function AlpacaRun(canvas, isDebug) {
         }
     };
 
-    // Attach keypress event
-    document.addEventListener("keypress", function (event) {
+    // Attach keyPress event
+    document.addEventListener("keyPress", function (event) {
         switch (event.charCode) {
             case 32:
                 if (!t.isRunning) {

@@ -5547,7 +5547,54 @@ exports.wrapSync = asyncify;
 Object.defineProperty(exports, '__esModule', { value: true });
 
 })));
-;;function AnimationGroup(engine) {
+;;;function BounceAction(amount) {
+
+}
+
+Element.prototype.bounce = BounceAction;;function JumpAction(maxJumpHeight, speed) {
+    var self = this;
+
+    if (!self.isActionRunning) {
+        self.original = {
+            top: this.position.top
+        };
+    }
+
+    this.isActionRunning = false;
+    this.speed = speed;
+    this.startJumpAt = self.original.top;
+    this.endJumpAt = self.original.top - maxJumpHeight;
+    this.jumpDirection = 'up';
+
+    this.actionTick = function () {
+        self.isActionRunning = true;
+
+        if (this.position.top >= self.endJumpAt && this.jumpDirection === 'up') {
+            this.position.top = this.position.top - this.speed;
+        }
+
+        if (this.position.top === this.endJumpAt && this.jumpDirection === 'up') {
+            this.jumpDirection = 'down';
+            return;
+        }
+
+        if (this.position.top <= this.startJumpAt && this.jumpDirection === 'down') {
+            this.position.top = this.position.top + this.speed;
+        }
+
+        if (this.position.top === this.startJumpAt && this.jumpDirection === 'down') {
+            this.jumpDirection = 'up';
+            self.end();
+        }
+    };
+
+    this.end = function () {
+        this.actionTick = null;
+        self.isActionRunning = false;
+    }
+}
+
+Element.prototype.jump = JumpAction;;function AnimationGroup(engine) {
     if (!engine) {
         throw new Error("Must create animation group from scene");
     }
@@ -5649,7 +5696,7 @@ ImageAsset.prototype = new Asset();;function AssetManager() {
         console.log(this.engine.assetManager.assets);
     };
 };function Element() {
-    this.position = null;
+    var self = this;
 
     this.get = function () {
         throw new Error("Must overwrite this function");
@@ -5658,44 +5705,6 @@ ImageAsset.prototype = new Asset();;function AssetManager() {
     this.resize = function (engine) {
         if (!this.position) {
             throw new Error("Position must be an object");
-        }
-
-        if (typeof this.position.width === 'string') {
-            var percentage = parseFloat(this.position.width.replace('%', '')) / 100;
-            this.position.width = Math.floor(engine.screen.width / percentage);
-        }
-
-        if (typeof this.position.height === 'string') {
-            if (this.position.height === 'auto') {
-                if (this.image.width > this.image.width) {
-                    var ratio = this.image.width / this.image.height;
-                    this.position.height = Math.floor(this.position.width * ratio);
-                } else {
-                    var ratio = this.image.height / this.image.width;
-                    this.position.height = Math.floor(this.position.width * ratio);
-                }
-            } else {
-                var percentage = parseFloat(this.position.height.replace('%', '')) / 100;
-                this.position.height = Math.floor(engine.screen.height / percentage);
-            }
-        }
-
-        if (typeof this.position.top === 'string') {
-            if (this.position.top === 'center') {
-                this.position.top = Math.floor((engine.screen.height / 2) - (this.position.height / 2));
-            } else {
-                var percentage = parseFloat(this.position.top.replace('%', '')) / 100;
-                this.position.top = Math.floor(engine.screen.height / percentage);
-            }
-        }
-
-        if (typeof this.position.left === 'string') {
-            if (this.position.left === 'center') {
-                this.position.left = Math.floor((engine.screen.width / 2) - (this.position.width / 2));
-            } else {
-                var percentage = parseFloat(left.replace('%', '')) / 100;
-                this.position.top = Math.floor(engine.screen.width / percentage);
-            }
         }
     };
 };;function ImageElement(assetName) {
@@ -5776,7 +5785,26 @@ function CanvasImage(canvas, position) {
     }
 }
 
-CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug) {
+CanvasImage.prototype = new Element();;function TextElement(text, size, font) {
+    this.text = text;
+    this.size = size;
+    this.font = font;
+
+    this.get = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 600;
+
+        var ctx = canvas.getContext('2d');
+
+        ctx.font = this.size + "px " + this.font;
+        ctx.fillText(text, 0, 0);
+
+        return canvas;
+    };
+}
+
+TextElement.prototype = new Element();;function Engine(canvas, options, isDebug) {
     var self = this;
 
     this.assetManager = new AssetManager();
@@ -5820,9 +5848,11 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
                 this.currentScene = i;
                 self.attachEvents();
                 this.scenes[this.currentScene].play();
-                break;
+                return;
             }
         }
+
+        throw new Error("No scene " + name);
     };
 
     /**
@@ -5837,8 +5867,8 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
      * Attaches events to the current scene
      */
     this.attachEvents = function () {
-        if (self.scenes[self.currentScene].keypress) {
-            document.addEventListener("keypress", self.scenes[self.currentScene].keypress);
+        if (self.scenes[self.currentScene].keyPress) {
+            document.addEventListener("keypress", self.scenes[self.currentScene].keyPress);
         }
 
         if (self.scenes[self.currentScene].click) {
@@ -5850,8 +5880,8 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
      * Removes events from current scene
      */
     this.detachEvents = function () {
-        if (self.scenes[self.currentScene].keypress) {
-            document.removeEventListener("keypress", self.scenes[self.currentScene].keypress);
+        if (self.scenes[self.currentScene].keyPress) {
+            document.removeEventListener("keypress", self.scenes[self.currentScene].keyPress);
         }
 
         if (self.scenes[self.currentScene].click) {
@@ -5893,7 +5923,7 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
     // Shared assets
     engine.addAsset(new ImageAsset('alpaca', '/img/alpaca.png'));
     engine.addAsset(new ImageAsset('fence', '/img/fence.png'));
-    engine.addAsset(new ImageAsset('apple', '/img/star.png'));
+    engine.addAsset(new ImageAsset('apple', '/img/apple.png'));
 
     // Level assets
     engine.addAsset(new ImageAsset('background', '/img/_11_background.png'));
@@ -5910,7 +5940,7 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
     var menuScene = engine.createScene('menu');
     menuScene.addElement(new ImageElement('menu'), 0, 0, '100%', '100%');
     menuScene.addElement(new ImageElement('alpaca'), 300, 'center', 200, 200);
-    menuScene.keypress = function (event) {
+    menuScene.keyPress = function (event) {
         if (event.keyCode === 32) {
             engine.changeScene('game');
         }
@@ -5919,7 +5949,12 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
     engine.addScene(menuScene);
 
     // Setup game scene
+    var apples = [];
+    var fences = [];
+    var points = 0;
+
     var gameScene = engine.createScene('game');
+
     var background = gameScene.addElement(new ParallaxElement(new ImageElement('background')), 0, 0, '100%', '100%');
     var clouds = gameScene.addElement(new ParallaxElement(new ImageElement('clouds')), 0, 0, '100%', '100%');
     var hugeClouds = gameScene.addElement(new ParallaxElement(new ImageElement('hugeclouds')), 0, 0, '100%', '100%');
@@ -5927,16 +5962,22 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
     var trees = gameScene.addElement(new ParallaxElement(new ImageElement('treesandbushes')), 0, 0, '100%', '100%');
     var ground = gameScene.addElement(new ParallaxElement(new ImageElement('ground')), 0, 0, '100%', '100%');
 
-    var backgroundGroup = gameScene.createAnimationGroup(background, clouds, hugeClouds, bushes, trees, ground);
+    // Setup the background group
+    var backgroundGroup = gameScene.createAnimationGroup(background, hugeClouds, bushes, trees, ground);
     backgroundGroup.tick = function () {
         return new AnimationGroupAction(0, -1);
     };
 
-    var alpacaElement = gameScene.addElement(new ImageElement('alpaca'), 400, 100, 100, 200);
+    clouds.tick = function () {
+        this.position.left--;
+    };
+
+    // Setup the alpaca
+    var alpacaElement = gameScene.addElement(new ImageElement('alpaca'), 400, 100, 100, 100);
     alpacaElement.direction = 'up';
 
     alpacaElement.tick = function () {
-        if (this.position.top > 380 && this.direction === 'up') {
+        if (this.position.top > 370 && this.direction === 'up') {
             this.position.top--;
             return;
         }
@@ -5946,7 +5987,7 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
             return;
         }
 
-        if (this.position.top === 380) {
+        if (this.position.top === 370) {
             this.direction = 'down';
             return;
         }
@@ -5957,14 +5998,81 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
         }
     };
 
-    gameScene.keypress = function (event) {
-        console.log(event.keyCode);
+    var pointsElement = gameScene.addElement(new TextElement("Points: " + points, 30, 'Arial'), 10, 10, 500, 200);
+
+    gameScene.keyPress = function (event) {
+        switch (event.keyCode) {
+            case 32:
+                alpacaElement.jump(200, 4);
+                break;
+        }
     };
 
-    gameScene.addTick(20, alpacaElement);
-    gameScene.addTick(20, backgroundGroup);
+    gameScene.addTick(500, function AddApples() {
+        var shouldAdd = Math.random() * (1000 - 100 ) + 100;
+
+        if (shouldAdd > 500) {
+            var yPosition = Math.random() * (470 - 250 ) + 250;
+
+            var apple = gameScene.createElement(new ImageElement('apple'), yPosition, '100%', 32, 32);
+            apple.onCollision = function () {
+                gameScene.removeElement(this);
+            };
+            apples.push(apple);
+
+            gameScene.watchForCollision(apple, alpacaElement);
+            gameScene.addElement(apple);
+        }
+
+        for (var i = 0; i < apples.length; i++) {
+            if (apples[i].position.left < -32) {
+                gameScene.removeElement(apples[i]);
+            }
+        }
+    });
+
+    gameScene.addTick(10, function () {
+        for (var i = 0; i < apples.length; i++) {
+            apples[i].position.left--;
+        }
+
+        for (var i = 0; i < fences.length; i++) {
+            fences[i].position.left--;
+        }
+    });
+
+    gameScene.addTick(3000, function () {
+        var shouldAdd = Math.random() * (1000 - 100 ) + 100;
+
+        if (shouldAdd > 500) {
+            var fence = gameScene.createElement(new ImageElement('fence'), 440, '100%', 16, 100);
+            fence.onCollision = function () {
+                engine.changeScene('results');
+            };
+            fences.push(fence);
+
+            gameScene.watchForCollision(fence, alpacaElement);
+            gameScene.addElement(fence);
+        }
+    });
+
+    gameScene.onStop = function () {
+        apples = [];
+        fences = [];
+    };
+
+    gameScene.addTick(10, alpacaElement);
+    gameScene.addTick(50, clouds);
+    gameScene.addTick(10, backgroundGroup);
 
     engine.addScene(gameScene);
+
+
+    var resultsScene = engine.createScene('results');
+    resultsScene.keyPress = function () {
+        engine.changeScene('game');
+    };
+    resultsScene.engine.addScene(resultsScene);
 
     return engine;
 };function Position(top, left, width, height, allowScale, engine) {
@@ -6015,9 +6123,17 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
             this.left = Math.floor((engine.screen.width / 2) - (this.width / 2));
         } else {
             var percentage = parseFloat(this.originalSize.left.replace('%', '')) / 100;
-            this.top = Math.floor(engine.screen.width / percentage);
+            this.left = Math.floor(engine.screen.width / percentage);
         }
     }
+
+    this.right = function () {
+        return this.left + this.width;
+    };
+
+    this.bottom = function () {
+        return this.top + this.height;
+    };
 
     return this;
 };function Scene(engine, name) {
@@ -6027,6 +6143,7 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
     this.name = name;
 
     this.elements = [];
+    this.elementIndex = 0;
     this.taskRunner = new TaskRunner();
 
     /**
@@ -6040,14 +6157,74 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
      * @returns {*}
      */
     this.addElement = function (element, top, left, width, height, allowScale) {
-        element.position = new Position(top, left, width, height, allowScale, self.engine);
-        element.asset = this.engine.assetManager.get(element.assetName);
-        element.loadAsset(engine, element.asset.src);
-        element.index = this.elements.length;
-
-        this.elements.push(element);
+        if (arguments.length > 1) {
+            this.elements.push(this.createElement(element, top, left, width, height, allowScale));
+        }
+        else {
+            this.elements.push(element);
+        }
 
         return element;
+    };
+
+    /**
+     * Removes an element from the screen
+     * @param element
+     */
+    this.removeElement = function (element) {
+        for (var i = 0; i < this.elements.length; i++) {
+            if (this.elements[i].index === element.index) {
+                this.elements.splice(i, 1);
+            }
+        }
+    };
+
+    /**
+     * Creates a new display element
+     * @param element
+     * @param top
+     * @param left
+     * @param width
+     * @param height
+     * @param allowScale
+     * @returns {*}
+     */
+    this.createElement = function (element, top, left, width, height, allowScale) {
+        element.position = new Position(top, left, width, height, allowScale, self.engine);
+        element.asset = this.engine.assetManager.get(element.assetName);
+
+        if (element.asset) {
+            element.loadAsset(engine, element.asset.src);
+        }
+
+        element.index = this.elementIndex;
+        this.elementIndex++;
+
+        return element;
+    };
+
+    /**
+     * Watches for a collision between two objects
+     * @param from
+     * @param to
+     */
+    this.watchForCollision = function (from, to) {
+        this.addTick(50, function () {
+            if (
+                from.position.left < to.position.right()
+                &&
+                from.position.right() > to.position.left
+                &&
+                from.position.top < to.position.bottom()
+                &&
+                from.position.bottom() > to.position.top
+                &&
+                !from.hasMet
+            ) {
+                from.hasMet = true;
+                from.onCollision();
+            }
+        });
     };
 
     /**
@@ -6084,10 +6261,18 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
      */
     this.addTick = function (delay, element) {
         this.taskRunner.add(delay, function () {
-            var response = element.tick();
+            if ((typeof element) === "function") {
+                return element();
+            }
 
-            if (element.type === 'group') {
-                element.internalTick(response);
+            if (element.actionTick) {
+                element.actionTick();
+            } else {
+                var response = element.tick();
+
+                if (element.type === 'group') {
+                    element.internalTick(response);
+                }
             }
         });
     };
@@ -6104,6 +6289,9 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
      */
     this.stop = function () {
         this.taskRunner.stop();
+        if (this.onStop) {
+            this.onStop();
+        }
     };
 
     /**
@@ -6168,14 +6356,21 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
 };function TaskRunner() {
     var self = this;
 
+    var isRunning = false;
     var taskList = [];
     var timerList = [];
 
     self.add = function (ticks, run) {
         taskList.push({ticks: ticks, run: run});
+
+        if (isRunning) {
+            timerList.push(setInterval(taskList[timerList.length].run, taskList[timerList.length].ticks));
+        }
     };
 
     self.run = function () {
+        isRunning = true;
+
         for (var i = 0; i < taskList.length; i++) {
             timerList.push(setInterval(taskList[i].run, taskList[i].ticks));
         }
@@ -6186,6 +6381,7 @@ CanvasImage.prototype = new Element();;function Engine(canvas, options, isDebug)
             clearInterval(timerList[i]);
         }
 
+        isRunning = false;
         timerList = [];
     };
 

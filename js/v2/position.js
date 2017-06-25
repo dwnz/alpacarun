@@ -46,9 +46,17 @@ function Position(top, left, width, height, allowScale, engine) {
             this.left = Math.floor((engine.screen.width / 2) - (this.width / 2));
         } else {
             var percentage = parseFloat(this.originalSize.left.replace('%', '')) / 100;
-            this.top = Math.floor(engine.screen.width / percentage);
+            this.left = Math.floor(engine.screen.width / percentage);
         }
     }
+
+    this.right = function () {
+        return this.left + this.width;
+    };
+
+    this.bottom = function () {
+        return this.top + this.height;
+    };
 
     return this;
 }

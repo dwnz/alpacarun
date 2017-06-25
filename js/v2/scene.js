@@ -5,6 +5,7 @@ function Scene(engine, name) {
     this.name = name;
 
     this.elements = [];
+    this.elementIndex = 0;
     this.taskRunner = new TaskRunner();
 
     /**
@@ -18,14 +19,74 @@ function Scene(engine, name) {
      * @returns {*}
      */
     this.addElement = function (element, top, left, width, height, allowScale) {
-        element.position = new Position(top, left, width, height, allowScale, self.engine);
-        element.asset = this.engine.assetManager.get(element.assetName);
-        element.loadAsset(engine, element.asset.src);
-        element.index = this.elements.length;
-
-        this.elements.push(element);
+        if (arguments.length > 1) {
+            this.elements.push(this.createElement(element, top, left, width, height, allowScale));
+        }
+        else {
+            this.elements.push(element);
+        }
 
         return element;
+    };
+
+    /**
+     * Removes an element from the screen
+     * @param element
+     */
+    this.removeElement = function (element) {
+        for (var i = 0; i < this.elements.length; i++) {
+            if (this.elements[i].index === element.index) {
+                this.elements.splice(i, 1);
+            }
+        }
+    };
+
+    /**
+     * Creates a new display element
+     * @param element
+     * @param top
+     * @param left
+     * @param width
+     * @param height
+     * @param allowScale
+     * @returns {*}
+     */
+    this.createElement = function (element, top, left, width, height, allowScale) {
+        element.position = new Position(top, left, width, height, allowScale, self.engine);
+        element.asset = this.engine.assetManager.get(element.assetName);
+
+        if (element.asset) {
+            element.loadAsset(engine, element.asset.src);
+        }
+
+        element.index = this.elementIndex;
+        this.elementIndex++;
+
+        return element;
+    };
+
+    /**
+     * Watches for a collision between two objects
+     * @param from
+     * @param to
+     */
+    this.watchForCollision = function (from, to) {
+        this.addTick(50, function () {
+            if (
+                from.position.left < to.position.right()
+                &&
+                from.position.right() > to.position.left
+                &&
+                from.position.top < to.position.bottom()
+                &&
+                from.position.bottom() > to.position.top
+                &&
+                !from.hasMet
+            ) {
+                from.hasMet = true;
+                from.onCollision();
+            }
+        });
     };
 
     /**
@@ -62,10 +123,18 @@ function Scene(engine, name) {
      */
     this.addTick = function (delay, element) {
         this.taskRunner.add(delay, function () {
-            var response = element.tick();
+            if ((typeof element) === "function") {
+                return element();
+            }
 
-            if (element.type === 'group') {
-                element.internalTick(response);
+            if (element.actionTick) {
+                element.actionTick();
+            } else {
+                var response = element.tick();
+
+                if (element.type === 'group') {
+                    element.internalTick(response);
+                }
             }
         });
     };
@@ -82,6 +151,9 @@ function Scene(engine, name) {
      */
     this.stop = function () {
         this.taskRunner.stop();
+        if (this.onStop) {
+            this.onStop();
+        }
     };
 
     /**
