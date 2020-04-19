@@ -1,5 +1,17 @@
 // TODO: Massive refactor...
 
+var PIXEL_RATIO = (function () {
+    var ctx = document.createElement("canvas").getContext("2d"),
+        dpr = window.devicePixelRatio || 1,
+        bsr = ctx.webkitBackingStorePixelRatio ||
+            ctx.mozBackingStorePixelRatio ||
+            ctx.msBackingStorePixelRatio ||
+            ctx.oBackingStorePixelRatio ||
+            ctx.backingStorePixelRatio || 1;
+
+    return dpr / bsr;
+})();
+
 function AlpacaRun(canvas, isDebug) {
     var t = this;
     t.isRunning = false;
@@ -35,7 +47,7 @@ function AlpacaRun(canvas, isDebug) {
     var highScore = 0;
 
     // Asset holders
-    var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash, ding, fence;
+    var img, trees, ground, clouds, clouds2, bushes, alpaca, star, results, splash, ding, fence, song;
     var assetCount = 11;
     var assetsLoaded = 0;
 
@@ -196,6 +208,8 @@ function AlpacaRun(canvas, isDebug) {
                         ding = new Audio('/sound/ding.wav');
                         ding.isSetup = false;
 
+                        song = new Audio('/sound/music.wav')
+
                         var timeout = setTimeout(function () {
                             // Something went wrong...
                             ding = {
@@ -273,6 +287,8 @@ function AlpacaRun(canvas, isDebug) {
     this.start = function () {
         this.reset();
         this.isRunning = true;
+        song.loop = true;
+        song.play();
 
         for (var i = 0; i < Math.random() * (10 - 2) + 2; i++) {
             var yPosition = Math.random() * ((470 * heightScale) - (250 * heightScale)) + (250 * heightScale);
